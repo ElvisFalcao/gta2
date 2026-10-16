@@ -61,7 +61,7 @@ export class CameraRig {
     }
     const wantPitch = (c.inVehicle ? 0.3 : 0.4) + this.pitchOffset;
     this.pitch = damp(this.pitch, wantPitch, 4, dt);
-    const wantDist = c.inVehicle ? clamp(8.5 + (c.vehicleLen || 4.5) * 0.6 + Math.abs(c.speed) * 0.12, 9, 17) : c.wide ? 11 : 7.6;
+    const wantDist = c.inVehicle ? clamp(8.5 + (c.vehicleLen || 4.5) * 0.6 + Math.abs(c.speed) * 0.12, 9, 17) : c.wide ? 11 : 8.2;
     this.dist = damp(this.dist, wantDist, 2.2, dt);
 
     _look.set(c.x, c.y + (c.inVehicle ? 1.7 : 1.55), c.z);
