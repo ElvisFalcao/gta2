@@ -298,7 +298,8 @@ export class HumanRig {
     }
 
     // actions layered on top
-    const a = s.action, t = s.actionT ?? 0;
+    const a = s.action;
+    const t = Number.isFinite(s.actionT) ? clamp(s.actionT, 0, 1) : 0;
     if (a === 'punchR' || a === 'punchL' || a === 'bat') {
       const k = t < 0.35 ? t / 0.35 : 1 - (t - 0.35) / 0.65;
       const arm = a === 'punchL' ? b.armL : b.armR;

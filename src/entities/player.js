@@ -187,7 +187,7 @@ export class Player {
     const a = this.attack;
     if (this.anim) this.rig.animate(dt, { mode: this.anim.mode, liftP: this.anim.liftP });
     else if (this.swimming) this.rig.animate(dt, { mode: 'swim' });
-    else this.rig.animate(dt, { speed: this.speedNow, airborne: this.airborne, action: a ? a.type : null, actionT: a ? a.t / a.dur : 0, carry: this.carry });
+    else this.rig.animate(dt, { speed: this.speedNow, airborne: this.airborne, action: a ? a.type : null, actionT: a ? a.t / a.spec.dur : 0, carry: this.carry });
     this.rig.setMuscle(1 + this.muscle / 100 * 0.32);
     this.syncRig();
   }
