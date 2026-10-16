@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d1b2a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="description" content="Mother City — an open-world Cape Town adventure prototype. Missions, mysteries, respect, gym, beach and more." />
+  <title>Mother City</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
+</head>
+<body>
+  <div id="app">
+    <div id="viewport"></div>
+
+    <!-- ===================== HUD ===================== -->
+    <div id="hud" class="hidden">
+      <div id="hud-tl">
+        <div id="minimap-wrap" title="Open map (M)">
+          <canvas id="minimap" width="150" height="150"></canvas>
+        </div>
+        <div id="toasts"></div>
+      </div>
+      <div id="hud-tr">
+        <div id="clock">07:00</div>
+        <div id="money">R 0</div>
+        <div class="bar health" title="Health"><i></i></div>
+        <div class="bar stamina" title="Stamina"><i></i></div>
+        <div id="respect"><span class="lbl">Respect</span><span id="respect-val">0</span></div>
+        <div class="bar resp"><i></i></div>
+        <div id="wanted"><b>★</b><b>★</b><b>★</b></div>
+        <div id="timer" class="hidden"></div>
+        <div id="counter" class="hidden"></div>
+      </div>
+      <div id="objective" class="hidden"></div>
+      <div id="banner" class="hidden"><div class="title"></div><div class="sub"></div></div>
+      <div id="bigarea" class="hidden"></div>
+      <div id="vehname" class="hidden"></div>
+      <div id="prompt" class="hidden"></div>
+      <div id="holdbar" class="hidden"><span></span><i></i></div>
+      <div id="dialogue" class="hidden"><div class="who"></div><div class="text"></div><div class="next">TAP ▸</div></div>
+      <div id="choices" class="hidden"><div class="q"></div><div class="opts"></div></div>
+      <div id="damage"></div>
+      <div id="arrest" class="hidden"></div>
+      <button id="btn-pause" aria-label="Pause">❚❚</button>
+    </div>
+
+    <!-- ===================== touch controls ===================== -->
+    <div id="touch" class="hidden">
+      <div id="joy-zone"></div>
+      <div id="joy-base"><div id="joy-knob"></div></div>
+      <div id="btns">
+        <button data-btn="attack" class="tb b-attack foot">PUNCH</button>
+        <button data-btn="jump" class="tb b-jump foot">JUMP</button>
+        <button data-btn="sprint" class="tb b-sprint foot">RUN</button>
+        <button data-btn="enter" class="tb b-enter">CAR</button>
+        <button data-btn="action" class="tb b-action"><span>ACTION</span></button>
+        <button data-btn="brake" class="tb b-brake car">BRAKE</button>
+        <button data-btn="horn" class="tb b-horn car">HORN</button>
+        <button data-btn="radio" class="tb b-radio car">RADIO</button>
+        <button data-btn="taxi" class="tb b-taxi car">TAXI JOB</button>
+      </div>
+    </div>
+
+    <div id="fade"></div>
+
+    <!-- phone / memory / minigame overlays -->
+    <div id="phone" class="hidden">
+      <div class="phone">
+        <div class="ph-top"><span class="ph-time">07:00</span><span>MTN ▂▄▆</span></div>
+        <div class="ph-from"></div>
+        <div class="ph-msgs"></div>
+        <div class="ph-hint">Tap to close</div>
+      </div>
+    </div>
+    <div id="memory" class="hidden"><div class="card"><div class="tag">MEMORY</div><div class="txt"></div><div class="hint">Tap to continue</div></div></div>
+    <div id="minigame" class="hidden"></div>
+
+    <!-- ===================== pause menu ===================== -->
+    <div id="menu" class="hidden">
+      <div class="menu-inner">
+        <div class="menu-head"><div class="logo">MOTHER CITY</div><button class="menu-close" data-act="resume" aria-label="Close">✕</button></div>
+        <nav class="menu-nav">
+          <button data-tab="resume">Resume</button>
+          <button data-tab="map">Map</button>
+          <button data-tab="missions">Missions</button>
+          <button data-tab="stats">Stats</button>
+          <button data-tab="notebook">Notebook</button>
+          <button data-tab="settings">Settings</button>
+          <button data-tab="cheats">Cheats</button>
+          <button data-tab="help">Controls</button>
+        </nav>
+        <section class="menu-body"></section>
+      </div>
+    </div>
+
+    <div id="mapview" class="hidden">
+      <canvas id="bigmap"></canvas>
+      <div class="map-ui">
+        <div class="map-title">CAPE TOWN</div>
+        <div class="map-legend"></div>
+        <div class="map-btns"><button data-z="in">＋</button><button data-z="out">－</button><button data-z="clear">Clear waypoint</button><button data-z="close">Close</button></div>
+        <div class="map-hint">Tap the map to set a waypoint</div>
+      </div>
+    </div>
+
+    <!-- ===================== title / loading ===================== -->
+    <div id="title">
+      <div class="title-inner">
+        <div class="t-kicker">An open-world Cape Town story</div>
+        <h1 class="t-logo">MOTHER<span>CITY</span></h1>
+        <div class="t-tag">Table Mountain • Bo-Kaap • Camps Bay • Langa • V&amp;A Waterfront</div>
+        <div id="loading">
+          <div class="load-bar"><i></i></div>
+          <div class="load-msg">Loading…</div>
+        </div>
+        <div id="title-btns" class="hidden">
+          <button id="btn-continue" class="big hidden">Continue</button>
+          <button id="btn-new" class="big">New Game</button>
+          <button id="btn-how" class="small">How to play</button>
+        </div>
+        <div id="how" class="hidden">
+          <div class="how-grid">
+            <div><h3>Phone / tablet</h3><p>Left thumb: drag anywhere on the left to walk / steer.<br>Right thumb: drag to look around. Buttons do the rest.<br>Hold your phone sideways for the best view.</p></div>
+            <div><h3>Keyboard</h3><p><b>WASD</b> move / drive · <b>Shift</b> sprint · <b>Space</b> jump / handbrake<br><b>F</b> enter / exit car · <b>E</b> talk / action · <b>J</b> or click punch<br><b>Mouse drag</b> camera · <b>M</b> map · <b>R</b> radio · <b>H</b> horn · <b>Esc</b> pause</p></div>
+            <div><h3>The goal</h3><p>Sizwe wakes up on Camps Bay beach with no memory. Talk to people with a <b>yellow marker</b> to start story missions, earn <b>Respect</b> and money, and find out who sold him out. Between missions, do whatever you want: gym, beach, cable car, taxi jobs, side jobs and 15 hidden proteas.</p></div>
+          </div>
+          <button id="btn-how-close" class="small">Got it</button>
+        </div>
+      </div>
+      <div class="t-foot">Prototype • Built with Three.js • Works on phone &amp; desktop</div>
+    </div>
+    <div id="rotate-hint">Turn your phone sideways for the best view ↻</div>
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "mother-city",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mother City — an open-world Cape Town adventure prototype (GTA-style) for phone and desktop browsers.",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes http-server -p 8080 -c-1 .",
+    "smoke": "node tools/smoke.mjs http://localhost:8080/index.html?quality=low ./shots basic",
+    "playthrough": "node tools/smoke.mjs http://localhost:8080/index.html?quality=low ./shots story"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  },
+  "license": "MIT"
+}

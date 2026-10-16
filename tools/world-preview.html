@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;height:100%;overflow:hidden;background:#000}</style>
+<script type="importmap">{"imports":{"three":"../vendor/three.module.min.js"}}</script></head><body>
+<script type="module">
+import * as THREE from 'three';
+import { Grid } from '../src/world/grid.js';
+import { RoadGraph } from '../src/world/roads.js';
+import { ROADS } from '../src/world/mapData.js';
+import { buildCity } from '../src/world/cityGen.js';
+import { CityMeshes } from '../src/world/cityMeshes.js';
+import { Landmarks } from '../src/world/landmarks.js';
+import { Environment } from '../src/world/environment.js';
+const t0 = performance.now();
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 0.3, 4000);
+const grid = new Grid();
+const roads = new RoadGraph(ROADS);
+const t1 = performance.now();
+const city = buildCity(grid, roads);
+const t2 = performance.now();
+const quality = {shadows:true, shadowSize:2048, fogFar:1400};
+const meshes = new CityMeshes(scene, grid, roads, city, quality);
+meshes.buildAll();
+const lm = new Landmarks(meshes.root, grid, city); lm.build();
+const t3 = performance.now();
+const env = new Environment(scene, quality);
+window.stats = {roads: performance.now(), nodes: roads.nodes.length, edges: roads.edges.length, buildings: city.buildings.length, trees: Object.fromEntries(Object.entries(city.trees).map(([k,v])=>[k,v.length])), lamps: city.lamps.length, signals: city.signals.length, tGraph: t1-t0, tCity: t2-t1, tMesh: t3-t2};
+const fogObj = scene.fog;
+window.view = (px,py,pz, tx,ty,tz, hours=12, fog=true) => { scene.fog = fogObj; camera.position.set(px,py,pz); camera.lookAt(tx,ty,tz); env.hours = hours; env.apply(new THREE.Vector3(tx,0,tz), camera); if (!fog) scene.fog = null; meshes.update(0.016, 1, env, null); lm.update(1, env, 0.016); renderer.render(scene, camera); return renderer.info.render; };
+window.ready = true;
+</script></body></html>
