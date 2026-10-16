@@ -282,10 +282,12 @@ export class Landmarks {
     const top = { x: POI.cableTop.x, y: PLATEAU.y, z: POI.cableTop.z };
     k.block(top.x, top.y - 2, top.z + 10, 14, 7, 9, '#c9c4b8');
     k.block(top.x, top.y + 5, top.z + 10, 15, 0.6, 10, '#8a3b2e');
-    k.block(top.x + 30, top.y, top.z + 4, 6, 1, 0.3, '#6b4f36'); // viewpoint railing
-    k.block(top.x + 60, top.y, top.z - 2, 8, 1, 0.3, '#6b4f36');
+    // viewpoint railing near the north edge
+    k.block(POI.viewpoint.x - 3, top.y, POI.viewpoint.z - 3.2, 14, 1.05, 0.15, '#6b4f36');
+    for (let i = 0; i < 5; i++) k.block(POI.viewpoint.x - 9.5 + i * 3.25, top.y, POI.viewpoint.z - 3.2, 0.18, 1.1, 0.18, '#4a3624');
+    k.block(POI.viewpoint.x + 1, top.y, POI.viewpoint.z + 1.5, 2.4, 0.5, 0.7, '#7a5230'); // bench
     // cables
-    const a = new THREE.Vector3(x, 6.5, z + 4), b = new THREE.Vector3(top.x, top.y + 4, top.z + 6);
+    const a = new THREE.Vector3(x, 6.5, z + 4), b = new THREE.Vector3(top.x, top.y + 4, top.z + 10);
     for (const off of [-0.8, 0.8]) {
       const len = a.distanceTo(b);
       const g = new THREE.CylinderGeometry(0.06, 0.06, len, 4);
@@ -296,8 +298,9 @@ export class Landmarks {
       m.rotateX(Math.PI / 2);
       this.root.add(m);
     }
+    const cabEnd = new THREE.Vector3(top.x, top.y + 4, top.z + 4);
     this.cableA = a;
-    this.cableB = b;
+    this.cableB = cabEnd;
     // rotating cabin
     const cab = new THREE.Group();
     const body = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 2.6, 16), new THREE.MeshLambertMaterial({ color: '#d63a2f' }));
@@ -320,7 +323,7 @@ export class Landmarks {
         u = cyc < 0.5 ? cyc * 2 : 2 - cyc * 2;
         u = THREE.MathUtils.smoothstep(u, 0, 1);
       }
-      cab.position.lerpVectors(a, b, u);
+      cab.position.lerpVectors(a, cabEnd, u);
       cab.position.y -= 4.2;
       cab.rotation.y = t * 0.3;
     });

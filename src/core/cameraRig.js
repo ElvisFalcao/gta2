@@ -65,19 +65,55 @@ export class CameraRig {
     this.dist = damp(this.dist, wantDist, 2.2, dt);
 
     _look.set(c.x, c.y + (c.inVehicle ? 1.7 : 1.55), c.z);
-    const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
-    _want.set(
-      _look.x - Math.sin(this.yaw) * this.dist * cp,
-      _look.y + this.dist * sp,
-      _look.z - Math.cos(this.yaw) * this.dist * cp,
-    );
-    // occlusion
+    const grid = this.grid;
+    const camAt = (yaw, pitch, out) => {
+      const cp = Math.cos(pitch), sp = Math.sin(pitch);
+      return out.set(_look.x - Math.sin(yaw) * this.dist * cp, _look.y + this.dist * sp, _look.z - Math.cos(yaw) * this.dist * cp);
+    };
+    const clear = (v) => grid.raycast(_look.x, _look.y, _look.z, v.x, v.y, v.z);
+    // when a wall is in the way: first try looking over it, then (standing still) swing around it
+    let boostWant = 0;
+    if (!c.onPlateau && !this.shot) {
+      const t0 = clear(camAt(this.yaw, this.pitch, _want));
+      if (t0 < 0.9) {
+        for (const pb of [0.3, 0.6, 0.85]) {
+          if (clear(camAt(this.yaw, this.pitch + pb, _want)) > 0.97) {
+            boostWant = pb;
+            break;
+          }
+        }
+        if (!boostWant && !c.inVehicle && !c.moving && this.manualT <= 0) {
+          this.occT = (this.occT || 0) + dt;
+          if (this.occT > 0.3) {
+            let best = null, bestT = t0 + 0.2;
+            for (const off of [0.6, -0.6, 1.2, -1.2, 1.9, -1.9, Math.PI]) {
+              const tt = clear(camAt(this.yaw + off, this.pitch, _want));
+              if (tt > bestT) {
+                bestT = tt;
+                best = this.yaw + off;
+                if (tt > 0.97) break;
+              }
+            }
+            if (best !== null) this.yaw = dampAngle(this.yaw, best, 2.5, dt);
+          }
+        }
+      } else this.occT = 0;
+    }
+    this.pitchBoost = damp(this.pitchBoost || 0, boostWant, boostWant > (this.pitchBoost || 0) ? 6 : 1.5, dt);
+    camAt(this.yaw, this.pitch + this.pitchBoost, _want);
+    // occlusion: pull the camera in front of whatever still blocks it
     if (!c.onPlateau) {
-      const t = this.grid.raycast(_look.x, _look.y, _look.z, _want.x, _want.y, _want.z);
+      const t = clear(_want);
       if (t < 1) {
         const tt = Math.max(0.12, t - 0.06);
         _want.lerpVectors(_look, _want, tt);
         _want.y = Math.max(_want.y, _look.y + 0.6);
+      }
+    }
+    if (c.onPlateau && c.block) {
+      const [x0, z0, x1, z1] = c.block;
+      for (let i = 0; i < 12 && _want.x > x0 - 1 && _want.x < x1 + 1 && _want.z > z0 - 1 && _want.z < z1 + 1 && _want.y < c.groundY + 8; i++) {
+        _want.lerp(_look, 0.18);
       }
     }
     _want.y = Math.max(_want.y, (c.groundY ?? 0) + 0.8);

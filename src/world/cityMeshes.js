@@ -35,6 +35,7 @@ export class CityMeshes {
     this.buildLamps();
     this.buildSignals();
     this.buildMountains();
+    this.buildPlateauDetail();
   }
 
   add(mesh, { cast = false, receive = true } = {}) {
@@ -88,7 +89,7 @@ export class CityMeshes {
             break;
           }
           case T.PARK: col = '#6c9f48'; break;
-          case T.PLAZA: col = (ix + iz) % 2 ? '#cfc6b3' : '#c8bfac'; break;
+          case T.PLAZA: col = '#b9b5ac'; break;
           case T.WALK: col = '#c4beb2'; break;
           case T.ROAD: col = '#45484c'; break;
           case T.BUILDING: case T.PROP: col = '#9a948a'; break;
@@ -102,7 +103,7 @@ export class CityMeshes {
         for (let py = 0; py < PX; py++) {
           for (let px = 0; px < PX; px++) {
             const k = ((iz * PX + py) * cv.width + ix * PX + px) * 4;
-            const n = t === T.ROAD || t === T.WALK ? 1 : 0.93 + rng.next() * 0.12;
+            const n = t === T.ROAD || t === T.WALK || t === T.PLAZA ? 1 : 0.93 + rng.next() * 0.12;
             d[k] = clamp(r * n, 0, 255);
             d[k + 1] = clamp(gg * n, 0, 255);
             d[k + 2] = clamp(b * n, 0, 255);
@@ -332,14 +333,19 @@ export class CityMeshes {
       k.block(cx, h, cz, L + 0.6, 0.22, D + 0.6, b.roofColor);
       return;
     }
-    // flat roof with parapet
+    // flat roof (+ a cheap parapet on bigger buildings: outer/top faces only)
     k.quad([x0, h, z1], [x1, h, z1], [x1, h, z0], [x0, h, z0], b.roofColor);
-    const p = 0.7, t = 0.35;
-    if (b.wall !== 'township') {
-      k.block(cx, h, z0 + t / 2, L, p, t, b.color);
-      k.block(cx, h, z1 - t / 2, L, p, t, b.color);
-      k.block(x0 + t / 2, h, cz, t, p, D - 2 * t, b.color);
-      k.block(x1 - t / 2, h, cz, t, p, D - 2 * t, b.color);
+    if (b.wall === 'office' || b.wall === 'apartment' || b.wall === 'industrial' || b.wall === 'villa') {
+      const p = b.wall === 'villa' ? 0.5 : 0.8, t = 0.35, y1 = h + p, c = b.color;
+      k.quad([x1, h, z0], [x0, h, z0], [x0, y1, z0], [x1, y1, z0], c);
+      k.quad([x0, h, z1], [x1, h, z1], [x1, y1, z1], [x0, y1, z1], c);
+      k.quad([x0, h, z0], [x0, h, z1], [x0, y1, z1], [x0, y1, z0], c);
+      k.quad([x1, h, z1], [x1, h, z0], [x1, y1, z0], [x1, y1, z1], c);
+      // inner faces so the parapet reads from above
+      k.quad([x0 + t, h, z0 + t], [x1 - t, h, z0 + t], [x1 - t, y1, z0 + t], [x0 + t, y1, z0 + t], c);
+      k.quad([x1 - t, h, z1 - t], [x0 + t, h, z1 - t], [x0 + t, y1, z1 - t], [x1 - t, y1, z1 - t], c);
+      k.quad([x0 + t, h, z1 - t], [x0 + t, h, z0 + t], [x0 + t, y1, z0 + t], [x0 + t, y1, z1 - t], c);
+      k.quad([x1 - t, h, z0 + t], [x1 - t, h, z1 - t], [x1 - t, y1, z1 - t], [x1 - t, y1, z0 + t], c);
     }
     if ((b.wall === 'office' || b.wall === 'apartment') && L > 8 && D > 8) {
       const n = rng.int(1, 3);
@@ -503,16 +509,37 @@ export class CityMeshes {
     const tm = MOUNTAINS[0];
     const ck = new MeshKit();
     const rng = new RNG(8);
-    for (let i = 0; i < 26; i++) {
-      const a = Math.PI + (i / 25) * Math.PI; // north half of the plateau edge
-      const x = tm.cx + Math.cos(a) * tm.topRx * rng.range(0.75, 1.02);
-      const z = tm.cz + Math.sin(a) * tm.topRz * rng.range(0.6, 1.05);
-      ck.add(GEO.ico1, { x, y: tm.height + rng.range(4, 12), z, sx: rng.range(22, 40), sy: rng.range(8, 14), sz: rng.range(18, 30), color: '#ffffff' });
-      if (rng.chance(0.6)) ck.add(GEO.ico1, { x, y: tm.height - rng.range(10, 40), z: z - rng.range(8, 20), sx: rng.range(18, 28), sy: rng.range(10, 22), sz: rng.range(10, 16), color: '#f4f6f8' });
+    for (let i = 0; i < 24; i++) {
+      const a = Math.PI * 1.08 + (i / 23) * Math.PI * 0.84; // north face of the plateau
+      const e = rng.range(1.04, 1.18);
+      const x = tm.cx + Math.cos(a) * tm.topRx * e;
+      const z = tm.cz + Math.sin(a) * tm.topRz * e;
+      ck.add(GEO.sphere, { x, y: tm.height + rng.range(-3, 4), z, sx: rng.range(26, 42), sy: rng.range(7, 11), sz: rng.range(14, 22), color: '#ffffff' });
+      ck.add(GEO.sphere, { x, y: tm.height - rng.range(18, 45), z: z - rng.range(8, 18), sx: rng.range(18, 30), sy: rng.range(14, 26), sz: rng.range(8, 14), color: '#f4f6f8' });
     }
-    this.cloth = new THREE.Mesh(ck.build(), new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.88, emissive: '#9aa4ad', emissiveIntensity: 0.35, depthWrite: false }));
+    this.cloth = new THREE.Mesh(ck.build(), new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.72, emissive: '#c9d2da', emissiveIntensity: 0.45, depthWrite: false }));
     this.cloth.renderOrder = 3;
     this.root.add(this.cloth);
+  }
+
+  /** Rocks and fynbos on top of Table Mountain. */
+  buildPlateauDetail() {
+    const k = new MeshKit();
+    const rng = new RNG(77);
+    const P = { cx: -20, cz: 420, rx: 230, rz: 70, y: 230 };
+    for (let i = 0; i < 260; i++) {
+      const a = rng.range(0, Math.PI * 2), r = Math.sqrt(rng.next()) * 0.93;
+      const x = P.cx + Math.cos(a) * P.rx * r, z = P.cz + Math.sin(a) * P.rz * r;
+      if (Math.abs(x + 110) < 14 && Math.abs(z - 372) < 14) continue; // cable station
+      if (Math.abs(x + 60) < 10 && z < 368) continue; // viewpoint
+      if (rng.chance(0.45)) k.add(GEO.ico, { x, y: P.y + 0.2, z, sx: rng.range(1, 3.5), sy: rng.range(0.6, 1.8), sz: rng.range(1, 3), ry: rng.range(0, 3), color: rng.pick(['#8d8a80', '#9a968a', '#7e7b72']) });
+      else k.add(GEO.ico, { x, y: P.y + 0.2, z, sx: rng.range(0.8, 1.8), sy: rng.range(0.5, 1), sz: rng.range(0.8, 1.8), color: rng.pick(['#5d6b3a', '#6f7a41', '#7d7a46', '#8a6f5a', '#b86b7b', '#c98aa0']) });
+    }
+    // a path from the cable station to the viewpoint
+    for (let i = 0; i < 12; i++) k.block(-110 + i * 4.2, P.y + 0.02, 366 - i * 0.6, 4.4, 0.05, 2.2, '#a59d8c');
+    const mesh = new THREE.Mesh(k.build(), vcMaterial({ flatShading: true }));
+    mesh.receiveShadow = true;
+    this.add(mesh);
   }
 
   addMountain(kit, m) {
@@ -612,7 +639,7 @@ export class CityMeshes {
     if (this.cloth) {
       this.cloth.position.y = Math.sin(time * 0.1) * 2;
       this.cloth.position.z = Math.sin(time * 0.05) * 4;
-      this.cloth.material.opacity = 0.75 + Math.sin(time * 0.07) * 0.1;
+      this.cloth.material.opacity = 0.62 + Math.sin(time * 0.07) * 0.08;
     }
   }
 }

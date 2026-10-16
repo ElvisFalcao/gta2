@@ -257,7 +257,7 @@ export class Vehicle {
         this.game.vibrate(Math.min(80, speed * 3));
       }
     }
-    const dmg = speed > 6 ? (speed - 6) * 2.4 / Math.sqrt(this.mass) : 0;
+    const dmg = speed > 8 ? ((speed - 8) * 1.6) / Math.sqrt(this.mass) : 0;
     if (dmg > 0) this.damage(dmg);
     if (this.driver === 'player' && speed > 22) this.game.player.takeDamage((speed - 22) * 0.6, 'crash');
     if (this.ai && this.ai.onBump) this.ai.onBump(speed);

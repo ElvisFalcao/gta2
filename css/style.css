@@ -88,7 +88,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 }
 #objective em { color: var(--gold); font-style: normal; }
 
-#banner { position: absolute; left: 0; right: 0; top: 30%; text-align: center; animation: bannerIn 0.35s ease-out; }
+#banner { position: absolute; left: 0; right: 0; top: 30%; text-align: center; animation: bannerIn 0.35s ease-out; pointer-events: none; z-index: 5; }
 #banner .title { font-family: var(--display); font-size: clamp(42px, 9vw, 96px); line-height: 0.9; color: var(--gold); text-shadow: var(--outline), 0 6px 18px rgba(0, 0, 0, 0.6); letter-spacing: 1px; }
 #banner .sub { font-family: var(--display); font-size: clamp(20px, 3.4vw, 34px); color: #fff; text-shadow: var(--outline); margin-top: 6px; letter-spacing: 0.5px; }
 #banner.failed .title, #banner.wasted .title, #banner.busted .title { color: var(--red); }
@@ -117,6 +117,8 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 }
 #dialogue .who { font-family: var(--display); font-size: 22px; letter-spacing: 0.6px; color: var(--gold); line-height: 1; margin-bottom: 4px; }
 #dialogue .text { font-size: 16px; line-height: 1.45; min-height: 46px; }
+#dialogue.bark { pointer-events: none; opacity: 0.94; }
+#dialogue.bark .next { display: none; }
 #dialogue .next { position: absolute; right: 12px; bottom: 8px; font-family: var(--display); font-size: 14px; color: var(--muted); animation: blink 1s infinite; }
 @keyframes blink { 50% { opacity: 0.3; } }
 @keyframes dlgIn { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translateX(-50%); } }
@@ -302,6 +304,8 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   .menu-nav button { font-size: 18px; padding: 6px 10px; min-height: 40px; }
   .logo { font-size: 26px; }
   #prompt { font-size: 13px; }
+  #bigarea { right: auto; left: 50%; transform: translateX(-50%); top: 17%; font-size: 30px; white-space: nowrap; animation: none; }
+  #vehname { right: auto; left: 50%; transform: translateX(-50%); top: calc(17% + 34px); font-size: 22px; white-space: nowrap; animation: none; }
 }
 @media (max-width: 560px) and (orientation: portrait) {
   .menu-inner { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; }

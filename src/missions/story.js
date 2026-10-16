@@ -19,6 +19,7 @@ function shot(api, pos, look, speed = 2, snap = false) {
   const rig = api.g.cameraRig;
   rig.setShot(pos, look, speed);
   if (snap) {
+    rig.first = false;
     rig.pos.copy(pos);
     rig.look.copy(look);
   }
@@ -90,12 +91,14 @@ export const STORY = [
       g.hud.show(false);
       api.lock(true);
       p.anim = { mode: 'sunbathe' };
-      shot(api, V3(-260, 230, 140), V3(-30, 160, 420), 0.35, true);
+      shot(api, V3(140, 95, -640), V3(-40, 110, 300), 0.3, true);
       await g.hud.fade(false, 1200);
       g.hud.banner('CAPE TOWN', 'The Mother City — 07:00', 'title-card', 3400);
-      await api.wait(3.6);
-      shot(api, V3(-560, 14, 262), V3(-592, 0.6, 252), 0.55);
-      await api.wait(3.4);
+      await api.wait(3.8);
+      shot(api, V3(-430, 60, 140), V3(-560, 0, 250), 0.35);
+      await api.wait(3.0);
+      shot(api, V3(-570, 12, 262), V3(-592, 0.6, 252), 0.6);
+      await api.wait(2.6);
       const kyle = api.ped(POI.kyle.x, POI.kyle.z, { kind: 'npc', look: LOOKS.kyle, name: 'Kyle', ai: 'idle', invulnerable: true });
       kyle.heading = headingTo(kyle.x, kyle.z, p.x, p.z);
       p.anim = null;
@@ -407,6 +410,9 @@ export const STORY = [
       const pt = POI.pieter;
       const pieter = api.ped(pt.x, pt.z, { kind: 'npc', look: LOOKS.pieter, ai: 'idle', onPlateau: true, exact: true, invulnerable: false, health: 70 });
       await api.goTo(pt.x, pt.z, { r: 3.5, plateau: true, text: 'Meet <em>Pieter</em> at the viewpoint.' });
+      api.lock(true);
+      shot(api, V3(POI.viewpoint.x + 4, 237, POI.viewpoint.z - 4), V3(80, 10, -230), 1.2);
+      await api.wait(3.5);
       await api.talk([
         ['Pieter', "You're Mahlangu. The journalist. You vanished three weeks ago. Steyn's men took you."],
         ['Pieter', "They drugged you and dumped you on Camps Bay beach. You don't remember? Lucky for them."],

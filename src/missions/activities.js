@@ -76,6 +76,7 @@ export class Activities {
     I.add('koek', { x: -165, z: -169, r: 2.4, label: '🍩 Koeksisters — R15', enabled: () => g.missions.isDone('m5'), onUse: () => this.eat("Aunty Rashieda's koeksisters", 15, 25) });
     I.add('cableUp', { x: POI.cableLower.x + 6, z: POI.cableLower.z - 6, r: 2.6, label: '🚡 Cableway up — R80', onUse: () => this.rideCable(true) });
     I.add('cableDown', { x: POI.cableTop.x, z: POI.cableTop.z, r: 3, plateau: true, label: '🚡 Cableway down', onUse: () => this.rideCable(false) });
+    I.add('viewpoint', { x: POI.viewpoint.x, z: POI.viewpoint.z + 1, r: 3.2, plateau: true, label: '🔭 Enjoy the view', enabled: () => !g.missions.active, onUse: () => this.enjoyView() });
     I.add('safehouse', { x: POI.safehouse.x + 3.5, z: POI.safehouse.z + 1.2, r: 2.4, label: '💾 Save & rest', enabled: () => !!g.state.flags.safehouse, onUse: () => this.rest() });
     // proteas
     this.proteaSpots = [];
@@ -174,6 +175,24 @@ export class Activities {
       g.addRespect(1);
       g.hud.toast(`You chilled on ${name} beach for two hours. Fully rested. The locals respect a man who knows how to relax.`, 'good', 5000);
     } else g.hud.toast(`You chilled on ${name} beach for two hours. Fully rested.`, 'good');
+  }
+
+  /** Postcard shot from the edge of Table Mountain. */
+  async enjoyView(seconds = 7) {
+    const g = this.game, p = g.player;
+    p.locked = true;
+    g.cutscene = true;
+    const vp = POI.viewpoint;
+    g.cameraRig.setShot(new THREE.Vector3(vp.x, PLATEAU.y + 7, vp.z - 4), new THREE.Vector3(80, 10, -230), 1.2);
+    g.hud.toast('The Mother City at your feet: the City Bowl, Lion\'s Head, Signal Hill and Table Bay beyond.', 'good', 6500);
+    await new Promise((r) => setTimeout(r, seconds * 1000));
+    g.cameraRig.clearShot();
+    g.cutscene = false;
+    p.locked = false;
+    if (!g.state.flags.viewSeen) {
+      g.state.flags.viewSeen = true;
+      g.addRespect(2);
+    }
   }
 
   async rest() {

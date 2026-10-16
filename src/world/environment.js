@@ -163,6 +163,7 @@ export class Environment {
     this.sun.position.set(fx + dir.x * 300, focus.y + dir.y * 300, fz + dir.z * 300);
 
     this.scene.fog.color.copy(s.fog);
+    this.scene.fog.far = focus.y > 100 ? Math.max(this.quality.fogFar, 1600) : this.quality.fogFar;
     this.fogColor.copy(s.fog);
     const u = this.skyUniforms;
     u.top.value.copy(s.top);

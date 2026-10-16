@@ -348,7 +348,7 @@ export class Game {
     this.player.place(POI.hospital.x, POI.hospital.z, Math.PI);
     this.player.revive();
     this.cameraRig.first = true;
-    this.cameraRig.yaw = Math.PI;
+    this.cameraRig.yaw = 0;
     this.env.skip(1);
     this.respawning = false;
     await this.hud.fade(false, 700);
@@ -532,7 +532,7 @@ export class Game {
     this.cameraRig.update(dt, {
       x: p.x, y: p.y, z: p.z, heading: v ? v.heading : p.heading, speed: v ? v.fwdSpeed : p.speedNow,
       inVehicle: !!v, vehicleLen: v ? v.spec.len : 0, yawInput: this.cutscene ? 0 : yawIn, pitchInput: this.cutscene ? 0 : input.pitchDelta,
-      moving: p.speedNow > 1, onPlateau: p.onPlateau, groundY: p.onPlateau ? PLATEAU.y : 0, wide: this.missions.wideCam,
+      moving: p.speedNow > 1, onPlateau: p.onPlateau, groundY: p.onPlateau ? PLATEAU.y : 0, wide: this.missions.wideCam, block: this.world.cableTopRect,
     });
     this.camera.updateMatrixWorld();
     this._m4.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
