@@ -237,7 +237,7 @@ export class Activities {
   liftGame({ reps = 8, time = 20, title = 'GYM', api = null }) {
     const g = this.game, p = g.player;
     const box = document.getElementById('minigame');
-    box.innerHTML = `<div class="mg"><h2>${title}</h2><p>Tap as fast as you can to push the bar into the green zone!</p>
+    box.innerHTML = `<div class="mg"><h2>${title}</h2><p>Tap (or mash <b>A</b>) as fast as you can to push the bar into the green zone!</p>
       <div class="meter"><div class="zone" style="left:80%;right:0"></div><i></i></div>
       <div class="reps">0 / ${reps}</div><div class="time" style="font-size:13px;color:#a9b4bf;margin-bottom:8px">${time.toFixed(1)}s</div>
       <button class="tap">TAP!</button><div class="row"><button class="quit">Give up</button></div></div>`;
@@ -286,11 +286,15 @@ export class Activities {
         tap();
       });
       box.querySelector('.quit').addEventListener('click', () => end(false));
-      let last = performance.now();
+      let last = performance.now(), padWas = true;
       const loop = (t) => {
         if (finished) return;
         const dt = Math.min(0.05, (t - last) / 1000);
         last = t;
+        // gamepad: A / B / X / RT all count as a tap (edge-detected here; this loop runs outside the game frame)
+        const ph = g.input.padHeld, padNow = !!(ph.confirm || ph.attack || ph.jump);
+        if (padNow && !padWas) tap();
+        padWas = padNow;
         if (!g.paused) {
           left -= dt;
           power = Math.max(0, power - dt * 0.55);

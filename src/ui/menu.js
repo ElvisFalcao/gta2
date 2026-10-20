@@ -61,6 +61,67 @@ export class Menu {
     this.game.setPaused(false);
   }
 
+  /** Keyboard / gamepad while paused: B, Menu or Esc closes; LB / RB switch tabs; the map pans with the left stick. */
+  handleInput(input, dt) {
+    if (this.mapOpen) {
+      if (input.pressed('map') || input.pressed('back')) return this.closeMap();
+      const pad = input.pad;
+      if (!pad) return;
+      let changed = false;
+      const { s } = this.mapView();
+      if (pad.lx || pad.ly) {
+        this.mapPan.x += (pad.lx * 900 * dt * this.mapDpr) / s;
+        this.mapPan.z -= (pad.ly * 900 * dt * this.mapDpr) / s;
+        changed = true;
+      }
+      const zoom = pad.rt - pad.lt + (pad.ry ? -pad.ry : 0);
+      if (Math.abs(zoom) > 0.05) {
+        this.mapZoom = clamp(this.mapZoom * Math.exp(zoom * 1.6 * dt), 1, 6);
+        changed = true;
+      }
+      if (input.pressed('confirm')) {
+        const n = this.game.roads.nearestEdge(this.mapPan.x, this.mapPan.z);
+        this.game.waypoint = n && n.d < 40 ? { x: n.x, z: n.z } : { x: this.mapPan.x, z: this.mapPan.z };
+        this.game.audio.click();
+        changed = true;
+      }
+      if (input.pressed('enter')) {
+        this.game.waypoint = null;
+        changed = true;
+      }
+      if (changed || !this.padCross) {
+        this.padCross = true;
+        this.drawMap();
+        const c = this.mapCtx, W = this.mapCanvas.width / 2, H = this.mapCanvas.height / 2, k = this.mapDpr;
+        c.strokeStyle = '#fff';
+        c.lineWidth = 2 * k;
+        c.beginPath();
+        c.arc(W, H, 10 * k, 0, Math.PI * 2);
+        c.moveTo(W - 18 * k, H);
+        c.lineTo(W + 18 * k, H);
+        c.moveTo(W, H - 18 * k);
+        c.lineTo(W, H + 18 * k);
+        c.stroke();
+      }
+      return;
+    }
+    if (!this.isOpen) return;
+    if (input.pressed('back') || input.keyPressed('pause')) return this.close();
+    const tabs = [...this.el.querySelectorAll('.menu-nav button')].map((b) => b.dataset.tab).filter((t) => t !== 'resume' && t !== 'map');
+    const step = (input.pressed('brake') ? 1 : 0) - (input.pressed('action') ? 1 : 0);
+    if (step) {
+      const i = Math.max(0, tabs.indexOf(this.tab));
+      this.game.audio.click();
+      this.show(tabs[(i + step + tabs.length) % tabs.length]);
+    }
+    if (input.pressed('map')) {
+      this.close();
+      this.openMap();
+    }
+    const scroll = (input.pad ? -input.pad.ly - input.pad.ry : 0) + (input.held('navDown') ? 1 : 0) - (input.held('navUp') ? 1 : 0);
+    if (scroll) this.body.scrollTop += scroll * 600 * dt;
+  }
+
   show(tab) {
     this.tab = tab;
     this.el.querySelectorAll('.menu-nav button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
@@ -209,6 +270,17 @@ export class Menu {
       <tr><td>E</td><td>Action / talk / advance dialogue</td></tr>
       <tr><td>H · R · T</td><td>Horn · radio · taxi job</td></tr>
       <tr><td>M · Esc</td><td>Map · pause</td></tr></table>
+      <h3>Controller (Xbox layout)</h3><table class="kbd-table">
+      <tr><td>Left stick · right stick</td><td>Move / steer · camera (click RS to snap behind)</td></tr>
+      <tr><td>RT · LT</td><td>Gas · brake / reverse (on foot: RT punches too)</td></tr>
+      <tr><td>A</td><td>Hold to sprint · advance dialogue · confirm</td></tr>
+      <tr><td>B</td><td>Punch (3-hit combo) · back</td></tr>
+      <tr><td>X</td><td>Jump</td></tr>
+      <tr><td>Y</td><td>Enter / exit vehicle</td></tr>
+      <tr><td>LB · RB</td><td>Talk / action · handbrake (switch tabs in this menu)</td></tr>
+      <tr><td>Click LS</td><td>Horn</td></tr>
+      <tr><td>D-pad ← · ↓ · →</td><td>Radio · taxi job · action (↑ ↓ pick dialogue choices)</td></tr>
+      <tr><td>View · Menu</td><td>Map · pause</td></tr></table>
       <h3>Tips</h3><p>Respect unlocks new story missions — earn it from missions, side jobs, the gym, taxi fares and proteas. If the police are after you, break line of sight and lie low until the stars fade. Lekker!</p>`;
   }
 
@@ -233,6 +305,7 @@ export class Menu {
 
   closeMap() {
     this.mapOpen = false;
+    this.padCross = false;
     this.mapEl.classList.add('hidden');
     this.game.setPaused(false);
   }

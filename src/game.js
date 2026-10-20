@@ -152,6 +152,13 @@ export class Game {
     this.input.attachSurface(renderer.domElement, document.getElementById('joy-zone'), document.getElementById('joy-base'), document.getElementById('joy-knob'));
     this.input.bindButtons(document.getElementById('btns'));
     this.input.onTouchDetected = () => this.applySettings();
+    this.input.onGamepadChange = (on) => {
+      if (this.hud) this.hud.show(this.started && !this.hud.root.classList.contains('hidden'));
+      if (on && !this._padToast && this.hud) {
+        this._padToast = true;
+        this.hud.toast('🎮 Controller connected', '', 2200);
+      }
+    };
     this.cameraRig = new CameraRig(this.camera, this.grid);
     this.player = new Player(this);
     this.player.rig.group.visible = false;
@@ -300,7 +307,7 @@ export class Game {
   // ------------------------------------------------------------------ events
   onEnterVehicle(v) {
     this.audio.init();
-    if (this.audio.radioOn) this.hud.toast('📻 Mother City FM — amapiano all day (R / RADIO to switch off)', '', 3000);
+    if (this.audio.radioOn) this.hud.toast(`📻 Mother City FM — amapiano all day (${this.input.usingGamepad ? 'D-pad ←' : 'R / RADIO'} to switch off)`, '', 3000);
   }
   onExitVehicle(v) {
     if (this.activities.taxiActive) this.activities.stopTaxi('You left the taxi.');
@@ -388,6 +395,11 @@ export class Game {
 
   // ------------------------------------------------------------------ helpers
   vibrate(p) {
+    if (this.input && this.input.usingGamepad) {
+      const ms = Array.isArray(p) ? p.reduce((a, b) => a + b, 0) : p;
+      this.input.rumble(Math.min(600, ms), 0.8, 0.5);
+      return;
+    }
     if (this.input && this.input.touchMode && navigator.vibrate) {
       try {
         navigator.vibrate(p);
@@ -444,6 +456,7 @@ export class Game {
     const n = Math.ceil(sec / dt);
     const t0 = performance.now();
     for (let i = 0; i < n; i++) {
+      this.input.pollGamepad(dt);
       if (!this.paused) this.update(dt);
       await null;
       if (i % 30 === 29) await new Promise((r) => setTimeout(r, 0));
@@ -457,11 +470,14 @@ export class Game {
     const dt = Math.min(0.05, Math.max(0, (t - this.last) / 1000));
     this.last = t;
     this.fps = this.fps * 0.95 + (dt > 0 ? 1 / dt : 60) * 0.05;
-    if (!this.started) this.titleUpdate(dt);
-    else if (!this.paused) this.update(dt);
-    else {
+    this.input.pollGamepad(dt);
+    if (!this.started) {
+      this.titleUpdate(dt);
       this.input.endFrame();
-      if (this.menu.mapOpen && this.input.keyPressed('map')) this.menu.closeMap();
+    } else if (!this.paused) this.update(dt);
+    else {
+      this.menu.handleInput(this.input, dt);
+      this.input.endFrame();
       return; // keep the last frame frozen
     }
     this.renderer.render(this.scene, this.camera);
@@ -477,6 +493,10 @@ export class Game {
 
   titleUpdate(dt) {
     this.titleCamera(dt);
+    if (this.input.pressed('confirm') && window.__ready) {
+      const b = [...document.querySelectorAll('#title-btns button')].find((x) => !x.classList.contains('hidden') && x.offsetParent);
+      if (b) b.click();
+    }
     this.time += dt;
     this.env.hours = 17.6 + Math.sin(this.titleT * 0.02) * 0.3;
     this.env.apply(this._v3.set(0, 0, 0), this.camera);
@@ -489,6 +509,7 @@ export class Game {
   update(dt) {
     const p = this.player, input = this.input;
     this.time += dt;
+    this.hud.handlePad(input);
     if (this.dialogueOpen) this.hud.handleAdvanceKey(input);
     if (input.pressed('pause')) {
       input.consume('pause');
@@ -528,6 +549,7 @@ export class Game {
     let yawIn = input.yawDelta;
     if (input.keyHeld('camLeft')) yawIn += dt * 2;
     if (input.keyHeld('camRight')) yawIn -= dt * 2;
+    if (input.pressed('camReset')) this.cameraRig.snapBehind(p.vehicle ? p.vehicle.heading : p.heading);
     const v = p.vehicle;
     this.cameraRig.update(dt, {
       x: p.x, y: p.y, z: p.z, heading: v ? v.heading : p.heading, speed: v ? v.fwdSpeed : p.speedNow,

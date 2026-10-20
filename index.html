@@ -56,14 +56,15 @@
       <div id="joy-zone"></div>
       <div id="joy-base"><div id="joy-knob"></div></div>
       <div id="btns">
-        <button data-btn="attack" class="tb b-attack foot">PUNCH</button>
-        <button data-btn="jump" class="tb b-jump foot">JUMP</button>
-        <button data-btn="sprint" class="tb b-sprint foot">RUN</button>
-        <button data-btn="enter" class="tb b-enter">CAR</button>
+        <!-- Xbox-style face buttons: A bottom, B right, X left, Y top -->
+        <button data-btn="sprint" class="tb xb xa foot"><b>A</b><small>RUN</small></button>
+        <button data-btn="brake" class="tb xb xa car"><b>A</b><small>BRAKE</small></button>
+        <button data-btn="attack" class="tb xb xbb foot"><b>B</b><small>PUNCH</small></button>
+        <button data-btn="horn" class="tb xb xbb car"><b>B</b><small>HORN</small></button>
+        <button data-btn="jump" class="tb xb xx foot"><b>X</b><small>JUMP</small></button>
+        <button data-btn="radio" class="tb xb xx car"><b>X</b><small>RADIO</small></button>
+        <button data-btn="enter" class="tb xb xy b-enter"><b>Y</b><small>CAR</small></button>
         <button data-btn="action" class="tb b-action"><span>ACTION</span></button>
-        <button data-btn="brake" class="tb b-brake car">BRAKE</button>
-        <button data-btn="horn" class="tb b-horn car">HORN</button>
-        <button data-btn="radio" class="tb b-radio car">RADIO</button>
         <button data-btn="taxi" class="tb b-taxi car">TAXI JOB</button>
       </div>
     </div>

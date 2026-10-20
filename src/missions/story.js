@@ -9,7 +9,8 @@ import { dist, rand, pick, chance, headingTo } from '../core/util.js';
 import { makePosterBoard, POSTER_SPOTS } from './activities.js';
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
-const touch = (api) => api.g.input.touchMode;
+const touch = (api) => api.g.input.touchMode && !api.g.input.usingGamepad;
+const pad = (api) => api.g.input.usingGamepad;
 
 function bark(api, who, text, sec = 2.6) {
   api.g.hud.say(who, text, { auto: sec, bark: true });
@@ -118,17 +119,17 @@ export const STORY = [
         ['Kyle', 'No idea, bru. But my cousin Zanele runs the bootcamp on the Sea Point promenade. She knows everybody.'],
         ['Kyle', "Take my bakkie, it's parked on the sand. And drop this cooler box with her, ne? I'll fetch the bakkie later."],
       ], { focus: kyle, speakers: { Kyle: kyle } });
-      api.toast(touch(api) ? 'Drag on the <b>left</b> of the screen to walk. Drag on the <b>right</b> to look around.' : '<b>WASD</b> to walk · <b>Shift</b> to sprint · drag the mouse to look around.', '', 7000);
+      api.toast(pad(api) ? '<b>Left stick</b> to walk · hold <b>A</b> to sprint · <b>right stick</b> to look around.' : touch(api) ? 'Drag on the <b>left</b> of the screen to walk. Drag on the <b>right</b> to look around.' : '<b>WASD</b> to walk · <b>Shift</b> to sprint · drag the mouse to look around.', '', 7000);
       const bk = POI.kyleBakkie;
       const bakkie = api.vehicle('bakkie', bk.x, bk.z, bk.h, { color: '#ecf0f1', label: "Kyle's Bakkie" });
       api.failIf(() => bakkie.state !== 'ok', "You wrecked Kyle's bakkie!");
-      await api.enterVehicle(bakkie, `Get in <em>Kyle's bakkie</em>. ${touch(api) ? '(tap <b>CAR</b>)' : '(press <b>F</b>)'}`);
-      api.toast(touch(api) ? 'Left stick: push <b>up</b> to drive, <b>down</b> to brake / reverse, sideways to steer. <b>BRAKE</b> is the handbrake.' : '<b>W/S</b> gas &amp; brake · <b>A/D</b> steer · <b>Space</b> handbrake.', '', 8000);
+      await api.enterVehicle(bakkie, `Get in <em>Kyle's bakkie</em>. ${pad(api) ? '(press <b>Y</b>)' : touch(api) ? '(tap <b>CAR</b>)' : '(press <b>F</b>)'}`);
+      api.toast(pad(api) ? '<b>RT</b> gas · <b>LT</b> brake &amp; reverse · <b>left stick</b> steer · <b>RB</b> handbrake.' : touch(api) ? 'Left stick: push <b>up</b> to drive, <b>down</b> to brake / reverse, sideways to steer. <b>BRAKE</b> is the handbrake.' : '<b>W/S</b> gas &amp; brake · <b>A/D</b> steer · <b>Space</b> handbrake.', '', 8000);
       api.toast('Follow the <b style="color:#d48cff">purple route</b> on the minimap. South Africans drive on the <b>left</b>!', '', 8000);
       const zan = api.ped(POI.zanele.x, POI.zanele.z, { kind: 'npc', look: LOOKS.zanele, name: 'Zanele', ai: 'idle', anim: 'talk', invulnerable: true });
       const stop = findRoadPoint(api, -503, -158);
       await api.goTo(stop.x, stop.z, { r: 9, vehicle: bakkie, text: 'Drive to <em>Zanele</em> at the Sea Point promenade.', vehicleText: "Get back in <em>Kyle's bakkie</em>." });
-      await api.goTo(zan.x + 1.5, zan.z, { r: 2.6, text: `Get out ${touch(api) ? '(<b>EXIT</b>)' : '(<b>F</b>)'} and talk to <em>Zanele</em>.` });
+      await api.goTo(zan.x + 1.5, zan.z, { r: 2.6, text: `Get out ${pad(api) ? '(<b>Y</b>)' : touch(api) ? '(<b>EXIT</b>)' : '(<b>F</b>)'} and talk to <em>Zanele</em>.` });
       await api.talk([
         ['Zanele', "Yoh! Kyle's bakkie? And my cooler box! Thanks, sweetie. Who are you?"],
         ['SIZWE', "Sizwe. I'm… new here. I think."],
@@ -153,7 +154,7 @@ export const STORY = [
         ['Zanele', "They've been snatching phones from my bootcamp ladies down by the Green Point lighthouse."],
         ['Zanele', "Three of them. Go sort them out — but don't be a hero, ne?"],
       ], { focus: zan, speakers: { Zanele: zan } });
-      api.toast(touch(api) ? 'Tap <b>PUNCH</b> repeatedly for a 3-hit combo — the third hit is a kick.' : 'Press <b>J</b> (or click) to punch. Keep pressing for a 3-hit combo.', '', 7000);
+      api.toast(pad(api) ? 'Press <b>B</b> repeatedly for a 3-hit combo — the third hit is a kick.' : touch(api) ? 'Tap <b>PUNCH</b> repeatedly for a 3-hit combo — the third hit is a kick.' : 'Press <b>J</b> (or click) to punch. Keep pressing for a 3-hit combo.', '', 7000);
       const pn = POI.promenadeNorth;
       await api.goTo(pn.x, pn.z, { r: 16, text: 'Find the <em>Jackal crew</em> near the Green Point lighthouse.' });
       const thugs = api.enemies([[pn.x - 4, pn.z - 3], [pn.x + 3, pn.z - 6], [pn.x + 1, pn.z + 5]], { health: 42 });
@@ -200,7 +201,7 @@ export const STORY = [
       const boards = [];
       const place = async (s) => {
         await api.goTo(s.x, s.z, { r: 3, text: `Put up a poster at <em>${s.n}</em>. (${done}/5)` });
-        await api.hold(s.x, s.z, { r: 3, label: 'Put up poster', holdText: 'Putting up poster…', text: `Hold ${touch(api) ? '<b>ACTION</b>' : '<b>E</b>'} to put up the poster.`, time: 1.4, marker: false });
+        await api.hold(s.x, s.z, { r: 3, label: 'Put up poster', holdText: 'Putting up poster…', text: `Hold ${pad(api) ? '<b>LB</b>' : touch(api) ? '<b>ACTION</b>' : '<b>E</b>'} to put up the poster.`, time: 1.4, marker: false });
         const b = makePosterBoard();
         b.position.set(s.x, 0, s.z);
         b.rotation.y = g.player.heading + Math.PI;

@@ -1,6 +1,7 @@
 // In-game HUD: stats, rotating minimap with GPS, objectives, dialogue, choices,
 // banners, prompts, phone and memory overlays.
 
+import { PAD_GLYPH } from '../core/input.js';
 import { T } from '../world/grid.js';
 import { WORLD } from '../world/mapData.js';
 import { formatMoney, formatClock, clamp } from '../core/util.js';
@@ -98,7 +99,9 @@ export class HUD {
 
   show(on) {
     this.root.classList.toggle('hidden', !on);
-    this.el.touch.classList.toggle('hidden', !on || !this.game.input.touchMode);
+    const inp = this.game.input;
+    this.el.touch.classList.toggle('hidden', !on || !inp.touchMode || inp.usingGamepad);
+    this.root.classList.toggle('pad', !!inp.usingGamepad);
   }
 
   set(key, el, val, fn) {
@@ -154,7 +157,7 @@ export class HUD {
     this.set('mode', E.touch, mode, (el, v) => {
       el.classList.toggle('mode-car', v === 'car');
       el.classList.toggle('mode-foot', v === 'foot');
-      E.enterBtn.textContent = v === 'car' ? 'EXIT' : 'CAR';
+      E.enterBtn.querySelector('small').textContent = v === 'car' ? 'EXIT' : 'CAR';
     });
     const enter = mode === 'car' || !!p.canEnter();
     this.set('enter', E.enterBtn, enter && !g.dialogueOpen, (el, v) => el.classList.toggle('hidden', !v));
@@ -169,10 +172,12 @@ export class HUD {
 
   updatePrompt(enter, mode) {
     const g = this.game;
-    const touch = g.input.touchMode;
+    const pad = g.input.usingGamepad;
+    const touch = g.input.touchMode && !pad;
+    const k = (name, key) => (pad ? `<kbd class="pad pad-${PAD_GLYPH[name]}">${PAD_GLYPH[name]}</kbd>` : `<kbd>${key}</kbd>`);
     let html = '';
-    if (this.actionLabel) html = touch ? '' : `<kbd>E</kbd>${this.actionLabel}`;
-    else if (enter && mode === 'foot' && !touch && !g.dialogueOpen) html = '<kbd>F</kbd>Get in';
+    if (this.actionLabel) html = touch ? '' : `${k('action', 'E')}${this.actionLabel}`;
+    else if (enter && mode === 'foot' && !touch && !g.dialogueOpen) html = `${k('enter', 'F')}Get in`;
     this.set('prompt', this.el.prompt, html, (el, v) => {
       el.classList.toggle('hidden', !v);
       el.innerHTML = v;
@@ -478,6 +483,7 @@ export class HUD {
         }
         el.classList.add('hidden');
         this.game.dialogueOpen = false;
+        this.padUi = null;
         window.removeEventListener('keydown', onKey);
         this.game.audio.click();
         resolve(i);
@@ -497,6 +503,15 @@ export class HUD {
         });
         box.appendChild(b);
       });
+      const btns = [...box.children];
+      const ui = { i: Math.max(0, options.findIndex((o) => !o.disabled)), pick: () => pickIt(ui.i) };
+      ui.move = (d) => {
+        ui.i = (ui.i + d + options.length) % options.length;
+        ui.mark();
+      };
+      ui.mark = () => btns.forEach((b, j) => b.classList.toggle('sel', j === ui.i && this.game.input.usingGamepad));
+      ui.mark();
+      this.padUi = ui;
     });
   }
 
@@ -521,12 +536,14 @@ export class HUD {
         el.removeEventListener('pointerdown', close);
         window.removeEventListener('keydown', key);
         this.game.dialogueOpen = false;
+        this.padUi = null;
         resolve();
       };
       const key = (e) => { if (['Space', 'Enter', 'KeyE', 'Escape'].includes(e.code)) close(e); };
       setTimeout(() => {
         el.addEventListener('pointerdown', close);
         window.addEventListener('keydown', key);
+        this.padUi = { close: () => close({ stopPropagation() {} }) };
       }, 350);
     });
   }
@@ -543,14 +560,40 @@ export class HUD {
         el.removeEventListener('pointerdown', close);
         window.removeEventListener('keydown', key);
         this.game.dialogueOpen = false;
+        this.padUi = null;
         resolve();
       };
       const key = (e) => { if (['Space', 'Enter', 'KeyE', 'Escape'].includes(e.code)) close(e); };
       setTimeout(() => {
         el.addEventListener('pointerdown', close);
         window.addEventListener('keydown', key);
+        this.padUi = { close: () => close({ stopPropagation() {} }) };
       }, 500);
     });
+  }
+
+  // gamepad: d-pad + A for dialogue choices, A / B to dismiss phone & memory overlays
+  handlePad(input) {
+    const ui = this.padUi;
+    if (!ui || !input.usingGamepad) return;
+    const eat = () => ['confirm', 'advance', 'back', 'attack', 'action', 'jump'].forEach((n) => input.consume(n));
+    if (ui.close) {
+      if (input.pressed('confirm') || input.pressed('back')) {
+        eat();
+        ui.close();
+      }
+      return;
+    }
+    if (input.pressed('navUp')) ui.move(-1);
+    if (input.pressed('navDown')) {
+      input.consume('taxi');
+      ui.move(1);
+    }
+    ui.mark();
+    if (input.pressed('confirm')) {
+      eat();
+      ui.pick();
+    }
   }
 
   // used by the input layer while a dialogue is open

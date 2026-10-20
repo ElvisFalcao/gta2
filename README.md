@@ -54,6 +54,21 @@ Add `--cdn` to load Three.js from jsDelivr instead (~300 KB file).
 | Horn · radio · taxi job | **HORN · RADIO · TAXI JOB** | **H · R · T** |
 | Map · pause | Tap the minimap · **❚❚** | **M** · **Esc** |
 
+**Xbox controller** (or any pad with the standard layout — plug it in or pair it, then press a button):
+
+| | Controller |
+|---|---|
+| Walk / steer · camera | **Left stick** · **right stick** (click **RS** to snap the camera behind you) |
+| Gas · brake / reverse | **RT** · **LT** |
+| Sprint · punch · jump | Hold **A** · **B** (or **RT** on foot) · **X** |
+| Get in / out of a car | **Y** |
+| Talk / action · handbrake | **LB** · **RB** |
+| Horn · radio · taxi job | Click **LS** · **D-pad ←** · **D-pad ↓** |
+| Dialogue choices | **D-pad ↑ ↓** then **A** |
+| Map · pause | **View** · **Menu** (B goes back; LB / RB switch menu tabs; on the map the left stick pans, triggers zoom, **A** sets a waypoint) |
+
+The controller rumbles on hits and crashes. On phones the on-screen buttons use the same A / B / X / Y layout and colours.
+
 Drive on the **left** — this is South Africa. 🚦 Traffic lights ("robots") work, and so do the police.
 
 ---
@@ -112,7 +127,7 @@ css/style.css         all UI styling (responsive, phone-first)
 vendor/               three.module.min.js (r160, MIT)
 src/main.js           boot + title screen
 src/game.js           Game: renderer, systems, main loop, respawns, cheats
-src/core/             util maths, input (touch/keyboard/mouse), chase camera, mesh merging
+src/core/             util maths, input (touch/keyboard/mouse/gamepad), chase camera, mesh merging
 src/world/            mapData (hand-made Cape Town layout), grid rasteriser, road graph,
                       procedural city generation, meshes, landmarks, sky/day-night
 src/entities/         player, people (skinned blocky humans + dogs), vehicles
@@ -152,6 +167,7 @@ npm i -D playwright            # once
 npx http-server -p 8080 -c-1 . &
 node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots basic   # boots + intro
 node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots story   # plays all 10 missions automatically
+node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots gamepad # drives the game with a fake Xbox pad
 ```
 
 ---

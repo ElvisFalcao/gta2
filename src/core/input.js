@@ -1,5 +1,6 @@
-// Unified keyboard / mouse / touch input. Touch: floating joystick on the left,
+// Unified keyboard / mouse / touch / gamepad input. Touch: floating joystick on the left,
 // drag anywhere else to turn the camera, contextual buttons on the right.
+// Gamepad: standard (Xbox) mapping, GTA-style layout.
 
 const KEYMAP = {
   up: ['KeyW', 'ArrowUp'],
@@ -22,6 +23,31 @@ const KEYMAP = {
   camRight: ['KeyZ'],
 };
 
+// Standard-mapping button indices: 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT,
+// 8 View, 9 Menu, 10 LS click, 11 RS click, 12-15 d-pad up/down/left/right.
+const PADMAP = {
+  sprint: [0],
+  attack: [1, 7],
+  jump: [2],
+  enter: [3],
+  action: [4, 15],
+  brake: [5],
+  horn: [10],
+  camReset: [11],
+  map: [8],
+  pause: [9],
+  radio: [14],
+  taxi: [13],
+  advance: [0],
+  confirm: [0],
+  back: [1, 9],
+  navUp: [12],
+  navDown: [13],
+};
+export const PAD_GLYPH = { action: 'LB', enter: 'Y', attack: 'B', jump: 'X', sprint: 'A', brake: 'RB', advance: 'A' };
+const DEAD = 0.18;
+const dz = (v) => (Math.abs(v) < DEAD ? 0 : (v - Math.sign(v) * DEAD) / (1 - DEAD));
+
 export class Input {
   constructor(root) {
     this.root = root;
@@ -38,11 +64,19 @@ export class Input {
     this.touchMode = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     this.sensitivity = 1;
     this.onTouchDetected = null;
+    this.onGamepadChange = null;
+    this.pad = null; // {lx, ly, rx, ry, lt, rt}
+    this.padHeld = {};
+    this.padPressed = {};
+    this.usingGamepad = false;
+    this._padPrev = [];
+    window.addEventListener('gamepadconnected', () => this.pollGamepad(0));
 
     window.addEventListener('keydown', (e) => {
       if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault();
       if (!this.keys.has(e.code)) this.pressedKeys.add(e.code);
+      this.setGamepad(false);
       this.keys.add(e.code);
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
@@ -169,7 +203,77 @@ export class Input {
     });
   }
 
+  /** Read the first connected gamepad once per frame (Gamepad API is poll-only). */
+  pollGamepad(dt) {
+    let gp = null;
+    try {
+      for (const g of navigator.getGamepads ? navigator.getGamepads() : []) {
+        if (g && g.connected && g.buttons.length >= 10) {
+          gp = g;
+          break;
+        }
+      }
+    } catch {
+      /* not allowed in this context */
+    }
+    if (!gp) {
+      if (this.pad) {
+        this.pad = null;
+        this.padHeld = {};
+        this.setGamepad(false);
+      }
+      return;
+    }
+    this.gamepad = gp;
+    const b = (i) => {
+      const x = gp.buttons[i];
+      return x ? (typeof x === 'object' ? x.pressed || x.value > 0.5 : x > 0.5) : false;
+    };
+    const val = (i) => {
+      const x = gp.buttons[i];
+      return x ? (typeof x === 'object' ? x.value : x) : 0;
+    };
+    const ax = gp.axes;
+    const pad = { lx: dz(ax[0] || 0), ly: -dz(ax[1] || 0), rx: dz(ax[2] || 0), ry: dz(ax[3] || 0), lt: val(6), rt: val(7) };
+    const now = [];
+    let any = Math.abs(pad.lx) + Math.abs(pad.ly) + Math.abs(pad.rx) + Math.abs(pad.ry) + pad.lt + pad.rt > 0.1;
+    for (let i = 0; i < gp.buttons.length; i++) {
+      now[i] = b(i);
+      if (now[i]) any = true;
+    }
+    for (const name in PADMAP) {
+      const h = PADMAP[name].some((i) => now[i]);
+      const edge = PADMAP[name].some((i) => now[i] && !this._padPrev[i]);
+      this.padHeld[name] = h;
+      if (edge) this.padPressed[name] = true;
+    }
+    this._padPrev = now;
+    this.pad = pad;
+    if (any) this.setGamepad(true);
+    if (dt > 0 && (pad.rx || pad.ry)) {
+      this.yawDelta -= pad.rx * 2.6 * dt * this.sensitivity;
+      this.pitchDelta += pad.ry * 1.2 * dt * this.sensitivity;
+    }
+  }
+
+  setGamepad(on) {
+    if (this.usingGamepad === on) return;
+    this.usingGamepad = on;
+    if (this.onGamepadChange) this.onGamepadChange(on);
+  }
+
+  rumble(ms = 120, strong = 0.6, weak = 0.4) {
+    const a = this.gamepad && this.gamepad.vibrationActuator;
+    if (!a || !this.usingGamepad) return;
+    try {
+      a.playEffect('dual-rumble', { duration: ms, strongMagnitude: strong, weakMagnitude: weak });
+    } catch {
+      /* unsupported */
+    }
+  }
+
   setTouch() {
+    this.setGamepad(false);
     if (!this.touchMode) {
       this.touchMode = true;
       if (this.onTouchDetected) this.onTouchDetected();
@@ -192,14 +296,15 @@ export class Input {
     return ks ? ks.some((k) => this.pressedKeys.has(k)) : false;
   }
   held(name) {
-    return this.keyHeld(name) || !!this.btnHeld[name];
+    return this.keyHeld(name) || !!this.btnHeld[name] || !!this.padHeld[name];
   }
   pressed(name) {
     if (name === 'attack' && this.clickAttack) return true;
-    return this.keyPressed(name) || !!this.btnPressed[name];
+    return this.keyPressed(name) || !!this.btnPressed[name] || !!this.padPressed[name];
   }
   consume(name) {
     this.btnPressed[name] = false;
+    this.padPressed[name] = false;
     const ks = KEYMAP[name];
     if (ks) ks.forEach((k) => this.pressedKeys.delete(k));
     if (name === 'attack') this.clickAttack = false;
@@ -220,12 +325,25 @@ export class Input {
       if (m < 0.12) return { x: 0, y: 0, mag: 0 };
       return { x: this.joy.x, y: this.joy.y, mag: m };
     }
+    if (this.pad && (this.pad.lx || this.pad.ly)) {
+      const { lx: x, ly: y } = this.pad;
+      const h = Math.hypot(x, y), k = Math.max(1, h);
+      return { x: x / k, y: y / k, mag: Math.min(1, h) };
+    }
     return { x: 0, y: 0, mag: 0 };
+  }
+
+  /** Driving: RT gas / LT brake-reverse on a pad, otherwise the stick's vertical axis. */
+  get throttle() {
+    if (this.pad && (this.pad.rt > 0.05 || this.pad.lt > 0.05)) return this.pad.rt - this.pad.lt;
+    if (this.pad && this.usingGamepad && !this.keyHeld('up') && !this.keyHeld('down')) return 0;
+    return this.move.y;
   }
 
   endFrame() {
     this.pressedKeys.clear();
     this.btnPressed = {};
+    this.padPressed = {};
     this.yawDelta = 0;
     this.pitchDelta = 0;
     this.clickAttack = false;

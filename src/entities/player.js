@@ -360,7 +360,7 @@ export class Player {
       return;
     }
     const mv = this.locked ? { x: 0, y: 0 } : input.move;
-    v.input.throttle = mv.y;
+    v.input.throttle = this.locked ? 0 : input.throttle;
     v.input.steer = mv.x;
     v.input.handbrake = !this.locked && input.held('brake');
     this.x = v.x;
