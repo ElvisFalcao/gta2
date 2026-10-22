@@ -261,7 +261,8 @@ export class Menu {
   tab_help(el) {
     el.innerHTML = `<h2>Controls</h2>
       <h3>Touch</h3><table class="kbd-table">
-      <tr><td>Left side drag</td><td>Walk / run · steer &amp; accelerate in cars (push up = gas, down = brake/reverse)</td></tr>
+      <tr><td>Left side drag</td><td>Walk · steer when driving</td></tr>
+      <tr><td>GAS · BRAKE</td><td>Drive · brake (hold BRAKE to reverse); H.BRAKE for handbrake turns</td></tr>
       <tr><td>Right side drag</td><td>Look around</td></tr>
       <tr><td>PUNCH</td><td>Tap repeatedly for a 3-hit combo (auto-aims at enemies)</td></tr>
       <tr><td>RUN</td><td>Hold to sprint (uses stamina)</td></tr>

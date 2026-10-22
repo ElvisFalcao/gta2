@@ -284,7 +284,11 @@ export class Input {
     this.joy.active = false;
     this.joy.id = null;
     this.joy.x = this.joy.y = 0;
-    if (this.joyBase) this.joyBase.classList.remove('on');
+    if (this.joyBase) {
+      this.joyBase.classList.remove('on');
+      this.joyBase.style.left = this.joyBase.style.top = ''; // back to its resting spot
+    }
+    if (this.joyKnob) this.joyKnob.style.transform = 'translate(-50%,-50%)';
   }
 
   keyHeld(name) {
@@ -333,8 +337,10 @@ export class Input {
     return { x: 0, y: 0, mag: 0 };
   }
 
-  /** Driving: RT gas / LT brake-reverse on a pad, otherwise the stick's vertical axis. */
+  /** Driving: GAS / BRAKE pedals on touch, RT / LT on a pad, otherwise W / S. The touch stick only steers. */
   get throttle() {
+    if (this.btnHeld.gas || this.btnHeld.reverse) return (this.btnHeld.gas ? 1 : 0) - (this.btnHeld.reverse ? 1 : 0);
+    if (this.joy.active && !this.keyHeld('up') && !this.keyHeld('down')) return 0;
     if (this.pad && (this.pad.rt > 0.05 || this.pad.lt > 0.05)) return this.pad.rt - this.pad.lt;
     if (this.pad && this.usingGamepad && !this.keyHeld('up') && !this.keyHeld('down')) return 0;
     return this.move.y;

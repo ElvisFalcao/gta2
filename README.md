@@ -31,8 +31,21 @@ Then open <http://localhost:8080>. To play on your phone, open the same address 
 
 1. In the repository on GitHub: **Settings → Pages**.
 2. *Source*: **Deploy from a branch** → pick the branch (e.g. `main`) and the **/ (root)** folder → **Save**.
-3. After a minute it's live at `https://<your-user>.github.io/gta2/`. Open that link on your phone and tap
-   **Share → Add to Home Screen** to get a full-screen app icon.
+3. After a minute it's live at `https://<your-user>.github.io/gta2/`.
+
+### Install it like an app (full screen)
+
+The game is a Progressive Web App: install it from the browser and it gets its own icon, opens full screen with no
+browser bars, and keeps working offline after the first load.
+
+* **iPhone / iPad (Safari):** open the link, tap **Share** → **Add to Home Screen**, then open *Mother City* from the
+  home screen. (iPhone Safari can't go full screen inside the browser; the home-screen app can.) The title screen
+  reminds you how.
+* **Android (Chrome):** tap **Install the app** on the title screen, or ⋮ → **Install app**.
+
+`sw.js` caches the game for offline play and refreshes it in the background, so an update shows on the next launch.
+It is switched off on `localhost` (so it never serves stale code while you edit) unless the address contains `?sw`.
+Icons are rendered from `icons/icon.svg` by `node tools/make-icons.mjs`.
 
 ### One-file build
 
@@ -44,10 +57,11 @@ Add `--cdn` to load Three.js from jsDelivr instead (~300 KB file).
 
 | | Phone / tablet | Keyboard & mouse |
 |---|---|---|
-| Walk / drive | Drag on the **left** half (push up = gas, down = brake/reverse) | **W A S D** / arrows |
+| Walk / steer | Drag on the **left** half (the faint ring shows where) | **W A S D** / arrows |
+| Gas · brake / reverse | **GAS** · **BRAKE** pedals (hold BRAKE to reverse) | **W** · **S** |
 | Look around | Drag on the **right** half | Drag with the mouse · **Q / Z** |
 | Sprint | Hold **RUN** | **Shift** |
-| Jump / handbrake | **JUMP** / **BRAKE** | **Space** |
+| Jump / handbrake | **JUMP** / **H.BRAKE** | **Space** |
 | Punch (3-hit combo) | **PUNCH** | **J**, **K** or click |
 | Get in / out of a car | **CAR / EXIT** | **F** or **Enter** |
 | Talk / action | **ACTION** (appears when available) | **E** |
@@ -67,7 +81,8 @@ Add `--cdn` to load Three.js from jsDelivr instead (~300 KB file).
 | Dialogue choices | **D-pad ↑ ↓** then **A** |
 | Map · pause | **View** · **Menu** (B goes back; LB / RB switch menu tabs; on the map the left stick pans, triggers zoom, **A** sets a waypoint) |
 
-The controller rumbles on hits and crashes. On phones the on-screen buttons use the same A / B / X / Y layout and colours.
+The controller rumbles on hits and crashes. On phones the buttons are small icons sized to the screen and only show what you can do right now
+(e.g. **CAR** only appears next to a car).
 
 Drive on the **left** — this is South Africa. 🚦 Traffic lights ("robots") work, and so do the police.
 
@@ -128,6 +143,7 @@ Graphics quality (Low / Medium / High) is in *Pause → Settings*; phones defaul
 
 ```
 index.html            page shell, HUD markup, touch controls, title screen
+manifest.webmanifest, sw.js, icons/   installable app (home screen, full screen, offline)
 css/style.css         all UI styling (responsive, phone-first)
 vendor/               three.module.min.js (r160, MIT)
 src/main.js           boot + title screen

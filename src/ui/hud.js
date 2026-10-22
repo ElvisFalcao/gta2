@@ -157,7 +157,7 @@ export class HUD {
     this.set('mode', E.touch, mode, (el, v) => {
       el.classList.toggle('mode-car', v === 'car');
       el.classList.toggle('mode-foot', v === 'foot');
-      E.enterBtn.querySelector('small').textContent = v === 'car' ? 'EXIT' : 'CAR';
+      E.enterBtn.querySelector('.lbl').textContent = v === 'car' ? 'EXIT' : 'CAR';
     });
     const enter = mode === 'car' || !!p.canEnter();
     this.set('enter', E.enterBtn, enter && !g.dialogueOpen, (el, v) => el.classList.toggle('hidden', !v));

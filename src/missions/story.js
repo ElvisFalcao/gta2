@@ -124,7 +124,7 @@ export const STORY = [
       const bakkie = api.vehicle('bakkie', bk.x, bk.z, bk.h, { color: '#ecf0f1', label: "Kyle's Bakkie" });
       api.failIf(() => bakkie.state !== 'ok', "You wrecked Kyle's bakkie!");
       await api.enterVehicle(bakkie, `Get in <em>Kyle's bakkie</em>. ${pad(api) ? '(press <b>Y</b>)' : touch(api) ? '(tap <b>CAR</b>)' : '(press <b>F</b>)'}`);
-      api.toast(pad(api) ? '<b>RT</b> gas · <b>LT</b> brake &amp; reverse · <b>left stick</b> steer · <b>RB</b> handbrake.' : touch(api) ? 'Left stick: push <b>up</b> to drive, <b>down</b> to brake / reverse, sideways to steer. <b>BRAKE</b> is the handbrake.' : '<b>W/S</b> gas &amp; brake · <b>A/D</b> steer · <b>Space</b> handbrake.', '', 8000);
+      api.toast(pad(api) ? '<b>RT</b> gas · <b>LT</b> brake &amp; reverse · <b>left stick</b> steer · <b>RB</b> handbrake.' : touch(api) ? '<b>GAS</b> and <b>BRAKE</b> are on the right (hold BRAKE to reverse). Steer with the stick on the left.' : '<b>W/S</b> gas &amp; brake · <b>A/D</b> steer · <b>Space</b> handbrake.', '', 8000);
       api.toast('Follow the <b style="color:#d48cff">purple route</b> on the minimap. South Africans drive on the <b>left</b>!', '', 8000);
       const zan = api.ped(POI.zanele.x, POI.zanele.z, { kind: 'npc', look: LOOKS.zanele, name: 'Zanele', ai: 'idle', anim: 'talk', invulnerable: true });
       const stop = findRoadPoint(api, -503, -158);

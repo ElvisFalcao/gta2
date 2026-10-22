@@ -1,1 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#0d1b2a"/><path d="M6 44 L14 30 L20 34 L24 24 L50 24 L54 30 L58 44 Z" fill="#7d8562"/><rect x="24" y="22" width="26" height="4" fill="#9a9284"/><rect x="0" y="44" width="64" height="20" fill="#2a7fb0"/><text x="32" y="58" font-family="Impact, sans-serif" font-size="13" text-anchor="middle" fill="#ffcf33">MC</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b2a4a"/><stop offset="0.45" stop-color="#e2574c"/><stop offset="0.72" stop-color="#ffb347"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f6f9a"/><stop offset="1" stop-color="#0d2f45"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#sky)"/>
+  <circle cx="404" cy="132" r="40" fill="#ffd166" opacity="0.95"/>
+  <!-- Lion's Head, Table Mountain, Devil's Peak -->
+  <path d="M0 360 L40 318 L70 252 L98 230 L122 262 L150 300 L176 214 L340 206 L360 228 L392 196 L430 250 L470 288 L512 300 L512 380 L0 380 Z" fill="#26323f"/>
+  <path d="M176 214 L340 206 L346 214 L172 222 Z" fill="#f2efe6" opacity="0.85"/>
+  <rect y="372" width="512" height="140" fill="url(#sea)"/>
+  <path d="M0 372 H512 V384 H0 Z" fill="#ffcf33" opacity="0.55"/>
+  <text x="256" y="470" font-family="Impact, 'Bebas Neue', 'Arial Black', sans-serif" font-size="108" text-anchor="middle" fill="#ffcf33" stroke="#10161f" stroke-width="10" paint-order="stroke" letter-spacing="4">MC</text>
+</svg>

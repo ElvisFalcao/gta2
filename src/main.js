@@ -56,9 +56,43 @@ async function boot() {
   });
   $('#btn-how').addEventListener('click', () => $('#how').classList.toggle('hidden'));
   $('#btn-how-close').addEventListener('click', () => $('#how').classList.add('hidden'));
+  installHelp();
   window.__ready = true;
   const params = new URLSearchParams(location.search);
   if (params.has('autostart')) start(() => (params.get('autostart') === 'continue' ? game.continueGame() : game.newGame()));
 }
 
+// ---------------------------------------------------------------- home-screen app
+const standalone = () => matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true;
+
+function registerServiceWorker() {
+  // not on localhost (it would cache the code you are editing) unless ?sw is in the address, and not inside an iframe
+  const local = /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname) && !location.search.includes('sw');
+  if (!('serviceWorker' in navigator) || location.protocol === 'file:' || local || window.top !== window) return;
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+function installHelp() {
+  const el = $('#install-hint');
+  if (!el || standalone() || window.top !== window) return;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (ios) {
+    el.innerHTML = 'Play full screen: tap <b>Share</b> <span class="ico">⎙</span> then <b>Add to Home Screen</b>, and open Mother City from your home screen.';
+    el.classList.remove('hidden');
+    return;
+  }
+  // Android / desktop Chrome: offer the browser's own install prompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    el.innerHTML = '<button class="install-btn">Install the app</button> <span>— plays full screen, works offline</span>';
+    el.classList.remove('hidden');
+    el.querySelector('button').addEventListener('click', async () => {
+      e.prompt();
+      await e.userChoice.catch(() => {});
+      el.classList.add('hidden');
+    });
+  });
+}
+
+registerServiceWorker();
 boot();

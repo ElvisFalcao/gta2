@@ -6,7 +6,9 @@ const out = process.argv[3] || '/tmp';
 const scenario = process.argv[4] || 'basic';
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required'] });
 const mobile = !!process.env.MOBILE;
-const ctx = await browser.newContext(mobile ? { viewport: { width: 844, height: 390 }, deviceScaleFactor: 1.5, hasTouch: true, isMobile: true } : { viewport: { width: 1280, height: 720 } });
+// MOBILE=1: a large phone; MOBILE=small: iPhone 11 Pro / X / XS in landscape (812x375)
+const phone = process.env.MOBILE === 'small' ? { width: 812, height: 375 } : { width: 844, height: 390 };
+const ctx = await browser.newContext(mobile ? { viewport: phone, deviceScaleFactor: 1.5, hasTouch: true, isMobile: true } : { viewport: { width: 1280, height: 720 } });
 const page = await ctx.newPage();
 const logs = [];
 page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(m.type() + ': ' + m.text()); });

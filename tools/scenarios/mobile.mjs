@@ -27,10 +27,34 @@ export default async function ({ page, run, sleep, shot, logs }) {
   await shot('M4-joystick');
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
   // car HUD
-  await run(() => { const g = window.__game; const p = g.player; const v = g.vehicles.spawn('minibus', p.x + 3, p.z, p.heading, { persistent: true }); p.enterVehicle(v); });
+  await run(() => { const g = window.__game; const p = g.player; const v = g.vehicles.spawn('minibus', p.x + 3, p.z, p.heading, { persistent: true }); p.enterVehicle(v); window.__busStart = [v.x, v.z, v.heading]; });
   await run(() => window.__game.simulate(1));
   await sleep(1500);
   await shot('M5-car');
+  // touch pedals (real touches on the buttons): BRAKE reverses away from the kerb, then GAS drives forward
+  const hold = async (sel, sec, id) => {
+    const r = await page.locator(sel).boundingBox();
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: r.x + r.width / 2, y: r.y + r.height / 2, id }] });
+    await run(() => window.__game.simulate(0.2));
+    const t = await run(() => window.__game.player.vehicle.input.throttle);
+    let v = 0; // peak speed in the pedal's direction
+    for (let k = 0; k < 6; k++) {
+      await run((s) => window.__game.simulate(s / 6), sec);
+      const f = await run(() => window.__game.player.vehicle.fwdSpeed);
+      if (Math.abs(f) > Math.abs(v)) v = f;
+    }
+    if (sel === '.b-gas') await shot('M5b-gas');
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await run(() => window.__game.simulate(0.3));
+    return [t, v];
+  };
+  await run(() => { const g = window.__game, v = g.player.vehicle, n = g.roads.nearestEdge(-520, 120); v.x = n.x; v.z = n.z; v.vx = v.vz = 0; });
+  await run(() => window.__game.simulate(0.5));
+  const [brakeIn, back] = await hold('.b-rev', 1.5, 8);
+  const [gasIn, fwd] = await hold('.b-gas', 2.5, 7);
+  console.log(gasIn === 1 && brakeIn === -1 && back < -2 && fwd > 3 ? 'PASS' : 'FAIL', `pedals: BRAKE throttle ${brakeIn} -> ${back.toFixed(1)} m/s, GAS throttle ${gasIn} -> ${fwd.toFixed(1)} m/s`);
+  const sizes = await run(() => [...document.querySelectorAll('#btns .tb')].filter((b) => b.offsetParent).map((b) => `${b.dataset.btn}:${b.offsetWidth}x${b.offsetHeight}`).join(' '));
+  console.log('car buttons', sizes);
   await run(() => window.__game.menu.open('stats'));
   await sleep(1000);
   await shot('M6-menu');
