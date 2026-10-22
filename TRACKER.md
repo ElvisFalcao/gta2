@@ -36,6 +36,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [ ] New players understand what to do without reading the README
 - [ ] Sound and music pass (all generated in code today)
 - [ ] Kaaps, Afrikaans and isiXhosa street lines checked by native speakers
+- [x] AI placeholder voices (Kokoro) for the ★ first-pass lines, checked with speech recognition
 - [ ] Real voices recorded for the ★ first-pass lines in `assets/voice/SCRIPT.md`, with a signed release from every speaker
 
 ### Ship
@@ -45,6 +46,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [ ] Shown to first players, with their feedback collected
 
 ## Next up
+- Play with sound on and listen to the AI street voices (`assets/voice/ai/`); note lines that sound wrong. Fix spellings in `WORDS` in `tools/voice-gen/generate.py` and regenerate with `--ids <id> --force`.
 - Review the street lines in `src/data/barks.js` (or `assets/voice/SCRIPT.md`) and get native speakers to check the Kaaps, Afrikaans and isiXhosa.
 - Record the ★ first-pass voice lines as `assets/voice/<voice>/<id>.mp3`, then run `node tools/voice-script.mjs` so the game uses them.
 - Play the whole story on the iPhone at https://elvisfalcao.github.io/gta2/ and note what breaks.
@@ -52,6 +54,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - Run `npm run playthrough` after changes to check all 10 missions still complete.
 
 ## Log
+- 2026-10-22 · Claude Code · AI placeholder voices for the 303 first-pass street lines (Kokoro, generated locally; real recordings override them); generator in tools/voice-gen.
 - 2026-10-22 · Claude Code · Street voices: ~170 lines of reactive and ambient dialogue with speech bubbles, text-to-speech placeholders, a recording script and manifest tool, and a Street voices setting.
 - 2026-10-21 · Claude Code · Real summary, Definition of Done and Next up written from the README, the code and the commit history.
 - 2026-10-21 · Room · Tracking started from the dashboard.

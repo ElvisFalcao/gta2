@@ -41,10 +41,12 @@ export default async function ({ page, run, sleep, shot }) {
   }
   const amb = await log();
   check('ambient chatter happens', amb.length >= 3, `${amb.length} lines: ${amb.slice(0, 4).join(' | ')}`);
-  check('text-to-speech used as placeholder', (await run(() => window.__spoken.length)) >= amb.length, String(await run(() => window.__spoken.length)));
+  const via = await run(() => window.__game.voice.log.reduce((o, l) => ((o[l.via] = (o[l.via] || 0) + 1), o), {}));
+  check('every line is voiced (AI clip or text-to-speech)', (via.file || 0) + (via.tts || 0) === amb.length, JSON.stringify(via));
+  check('AI clips from the manifest are used', (via.file || 0) > 0 && (await run(() => [...window.__game.voice.buffers.values()].some((b) => b instanceof AudioBuffer))), JSON.stringify(via));
   check('speech bubble shown over the speaker', bubbleSeen);
   check('different people take turns', (await run(() => new Set(window.__game.voice.log.map((l) => l.ped)).size)) >= 3, String(await run(() => new Set(window.__game.voice.log.map((l) => l.ped)).size)));
-  check('voices vary (pitch)', (await run(() => new Set(window.__spoken.map((s) => s.pitch.toFixed(2))).size)) >= 2);
+  check('different voices speak', (await run(() => new Set(window.__game.voice.log.map((l) => l.voice)).size)) >= 2);
   // reactions
   const react = (cat) => run((cat) => {
     const g = window.__game, p = g.player, v = g.voice;
@@ -69,7 +71,7 @@ export default async function ({ page, run, sleep, shot }) {
   check('carjacked driver shouts', (await log()).slice(-1)[0]?.startsWith('carjacked'), (await log()).slice(-1)[0]);
   // scripted bark from a mission character
   await run(() => { const g = window.__game; g.voice.stop(); g.hud.say('Thug', 'Ey! Who invited you, laaitie?', { auto: 1, bark: true }); });
-  check('mission bark is voiced with the thug voice', (await log()).slice(-1)[0] === 'script:thug:tts:Ey! Who invited you, laaitie?', (await log()).slice(-1)[0]);
+  check('mission bark is voiced with the thug voice', /^script:thug:(file|tts):Ey! Who invited you, laaitie\?$/.test((await log()).slice(-1)[0]), (await log()).slice(-1)[0]);
   // recorded clip beats text-to-speech
   await run(() => { const g = window.__game; g.player.exitVehicle(); });
   await sim(1);

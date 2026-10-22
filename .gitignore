@@ -3,3 +3,5 @@ node_modules/
 *.log
 /shots/
 dist/
+tools/voice-gen/models/
+.venv/

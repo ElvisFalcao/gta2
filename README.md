@@ -144,10 +144,20 @@ src/ui/               HUD + minimap + GPS, pause menu + full map
 tools/                headless smoke tests and an automatic story playthrough (Playwright)
 ```
 
-### Recording real voices
+### Voices: AI placeholders and real recordings
 
-Until someone records them, street lines are spoken by the browser's text-to-speech (a South African English voice
-when the device has one). To replace them with real voices:
+The ★ first-pass lines (303 clips, 4 MB) currently have **AI placeholder voices** in `assets/voice/ai/`, generated
+locally with the open-weight Kokoro model (`tools/voice-gen/generate.py`, see its header for setup). Its voices are
+British/American, so the accent is only close; Afrikaans uses Afrikaans pronunciation rules, and isiXhosa borrows
+Swahili ones (no clicks). Lines without a clip fall back to the browser's text-to-speech. To regenerate or extend:
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r tools/voice-gen/requirements.txt
+.venv/bin/python tools/voice-gen/generate.py          # first pass;  --all for every voice, --ids a,b --force to redo some
+node tools/voice-script.mjs                            # refresh the manifest
+```
+
+A real recording always wins over the AI clip. To replace them with real voices:
 
 1. Run `node tools/voice-script.mjs`. It writes `assets/voice/SCRIPT.md` (a recording script per voice) and
    `assets/voice/script.csv`. Start with the **★ first-pass** lines: one woman's and one man's take of each line,
@@ -155,11 +165,11 @@ when the device has one). To replace them with real voices:
 2. Record each line as `assets/voice/<voice>/<id>.mp3` (`.m4a`, `.ogg` or `.wav` also work): mono, short, a little
    silence either side. Get a signed release from every speaker, and have native speakers check the Kaaps,
    Afrikaans and isiXhosa first.
-3. Run `node tools/voice-script.mjs` again: it updates `assets/voice/manifest.json`, and the game plays the clips
-   (panned towards the speaker) instead of text-to-speech. Anything still missing keeps using text-to-speech.
+3. Run `node tools/voice-script.mjs` again: it updates `assets/voice/manifest.json`, and the game plays your
+   recordings (panned towards the speaker) instead of the AI clips. `SCRIPT.md` marks recorded lines ✅ and AI ones 🤖.
 
 All lines live in `src/data/barks.js` — add a category or a line there and re-run the script.
-The one-file build has no audio files, so it always uses text-to-speech.
+The one-file build has no audio files, so it always uses the browser's text-to-speech.
 
 ### Writing a new mission
 

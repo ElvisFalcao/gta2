@@ -1,7 +1,7 @@
 // Street voices: people react out loud (bumped, nearly run over, hooted at, punched, robbed,
 // chased) and chat in the background, with a speech bubble over the speaker. A line plays a
-// recorded clip from assets/voice/<voice>/<id>.<ext> when assets/voice/manifest.json lists one,
-// otherwise the browser's text-to-speech (a South African English voice when the device has one)
+// clip when assets/voice/manifest.json lists one (a real recording in assets/voice/<voice>/, else an
+// AI-generated one in assets/voice/ai/<voice>/), otherwise the browser's text-to-speech (a South African English voice when the device has one)
 // stands in. One person speaks at a time; a higher-priority reaction interrupts chatter.
 
 import * as THREE from 'three';
@@ -30,7 +30,7 @@ const _v = new THREE.Vector3();
 export class VoiceSystem {
   constructor(game) {
     this.game = game;
-    this.files = {}; // voice -> { id: ext }
+    this.files = {}; // voice -> { id: path under assets/voice/ }
     this.buffers = new Map();
     this.current = null;
     this.gap = 4;
@@ -135,24 +135,26 @@ export class VoiceSystem {
     this.recent.push(L.id);
     if (this.recent.length > 14) this.recent.shift();
     // no clip for this voice yet: borrow one recorded by another voice of the same kind
-    let fileVoice = L.voice, ext = this.files[L.voice] && this.files[L.voice][L.id];
-    if (!ext) {
+    let file = this.clipFor(L.voice, L.id);
+    if (!file) {
       const fem = !!(VOICES[L.voice] || {}).female;
       for (const v of CIV_VOICES) {
-        if (v !== L.voice && !!VOICES[v].female === fem && this.files[v] && this.files[v][L.id]) {
-          fileVoice = v;
-          ext = this.files[v][L.id];
-          break;
-        }
+        if (v !== L.voice && !!VOICES[v].female === fem && (file = this.clipFor(v, L.id))) break;
       }
     }
-    this.log.push({ id: L.id, ped: L.ped ? L.ped.id : null, voice: L.voice, cat: L.cat, text: L.text, via: this.mode !== 'on' ? 'subs' : ext ? 'file' : 'tts' });
+    this.log.push({ id: L.id, ped: L.ped ? L.ped.id : null, voice: L.voice, cat: L.cat, text: L.text, via: this.mode !== 'on' ? 'subs' : file ? 'file' : 'tts', file });
     if (this.log.length > 60) this.log.shift();
     if (L.ped) this.showBubble(L);
     if (this.mode !== 'on') return;
     const vol = L.ped ? clamp(1.15 - dist(L.ped.x, L.ped.z, g.player.x, g.player.z) / HEAR, 0.15, 1) : 1;
-    if (ext) this.playFile(`${fileVoice}/${L.id}.${ext}`, vol, this.current);
+    if (file) this.playFile(file, vol, this.current);
     else this.playTts(L, vol, this.current);
+  }
+
+  clipFor(voice, id) {
+    const f = this.files[voice] && this.files[voice][id];
+    if (!f) return null;
+    return f.includes('.') ? f : `${voice}/${id}.${f}`; // older manifests stored just the extension
   }
 
   playTts(L, vol, cur) {
