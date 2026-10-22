@@ -445,6 +445,7 @@ export class HUD {
     this.typeT = 0;
     if (!opts.bark) this.game.dialogueOpen = true;
     el.classList.toggle('bark', !!opts.bark);
+    if (opts.bark && this.game.voice) this.game.voice.sayAs(who, text);
     return new Promise((resolve) => {
       this.dlg = { text, full: false, resolve, auto: opts.auto || 0, bark: !!opts.bark };
     });

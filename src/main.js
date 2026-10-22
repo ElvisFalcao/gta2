@@ -41,6 +41,7 @@ async function boot() {
   };
   const start = (fn) => {
     game.audio.init();
+    game.voice.unlock();
     goFull();
     fn();
   };

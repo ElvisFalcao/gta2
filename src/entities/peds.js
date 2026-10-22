@@ -276,6 +276,7 @@ export class Ped {
       this.vx += r.x * s * 30 * dt;
       this.vz += r.z * s * 30 * dt;
       if (this.kind === 'civ' && chance(dt * 2)) this.game.audio.shout(this.x, this.z);
+      if (v.driver === 'player' && this.game.voice) this.game.voice.react(this, 'nearMiss');
     }
   }
 
@@ -449,6 +450,7 @@ export class Ped {
     } else if (this.kind === 'npc' && byPlayer && !this.mission) {
       this.startFlee(g.player.x, g.player.z, 8);
     }
+    if (g.voice) g.voice.onHit(this, byPlayer);
   }
 
   knockOut(kind) {
@@ -598,6 +600,7 @@ export class PedSystem {
     for (const p of this.near(x, z, r)) {
       if (p === except || p.kind !== 'civ' || p.ai !== 'wander' && p.ai !== 'roam') continue;
       if (chance(0.7)) p.startFlee(x, z, rand(5, 9));
+      if (this.game.voice && chance(0.5)) this.game.voice.react(p, 'witness');
     }
   }
 
@@ -613,6 +616,7 @@ export class PedSystem {
     v.ai = null;
     v.npcLook = null;
     this.game.audio.shout(o.x, o.z);
+    if (this.game.voice) this.game.voice.react(p, 'carjacked', { force: true });
     return p;
   }
 
@@ -653,6 +657,7 @@ export class PedSystem {
           const push = rr - d;
           a.tryMove((dx / d) * push * 0.7, (dz / d) * push * 0.7);
           pl.tryMove((-dx / d) * push * 0.3, (-dz / d) * push * 0.3);
+          if (pl.speedNow > 3.5 && a.kind === 'civ' && a.state === 'ok' && this.game.voice) this.game.voice.react(a, 'bumped');
         }
       }
     }

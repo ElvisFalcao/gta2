@@ -188,6 +188,7 @@ export class Menu {
       <div class="setting"><span>Sound effects</span><input id="set-sfx" type="range" min="0" max="1" step="0.05"></div>
       <div class="setting"><span>Radio / music</span><input id="set-music" type="range" min="0" max="1" step="0.05"></div>
       <div class="setting"><span>Camera sensitivity</span><input id="set-sens" type="range" min="0.4" max="2" step="0.1"></div>
+      <div class="setting"><span>Street voices<br><span class="muted">People talking around you (speech bubbles always show unless Off)</span></span><select id="set-voices"><option value="on">Voices + bubbles</option><option value="subs">Bubbles only</option><option value="off">Off</option></select></div>
       <div class="setting"><span>Touch controls</span><select id="set-touch"><option value="auto">Auto</option><option value="on">Always on</option><option value="off">Off</option></select></div>
       <div class="btn-row"><button class="btn primary" id="set-save">Save game</button><button class="btn danger" id="set-reset">Delete save &amp; restart</button></div>
       <p class="muted" id="set-msg"></p>`;
@@ -204,6 +205,13 @@ export class Menu {
     mus.value = st.music;
     sens.value = st.sens;
     tch.value = st.touch;
+    const vo = el.querySelector('#set-voices');
+    vo.value = st.voices || 'on';
+    vo.addEventListener('change', () => {
+      st.voices = vo.value;
+      if (vo.value !== 'on') g.voice.stop();
+      g.saveSettings();
+    });
     const apply = () => {
       st.sfx = +sfx.value;
       st.music = +mus.value;

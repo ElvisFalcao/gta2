@@ -22,6 +22,7 @@ import { Audio } from './systems/audio.js';
 import { Interactions } from './systems/interactions.js';
 import { loadSave, writeSave, clearSave, loadSettings, writeSettings, freshState } from './systems/save.js';
 import { HUD } from './ui/hud.js';
+import { VoiceSystem } from './systems/voice.js';
 import { Menu } from './ui/menu.js';
 import { MissionSystem } from './missions/missionSystem.js';
 import { Activities } from './missions/activities.js';
@@ -89,7 +90,7 @@ export class Game {
   constructor() {
     const s = loadSettings();
     const touch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    this.settings = { quality: touch ? 'medium' : 'high', sfx: 0.8, music: 0.6, sens: 1, touch: 'auto', ...s };
+    this.settings = { quality: touch ? 'medium' : 'high', sfx: 0.8, music: 0.6, sens: 1, touch: 'auto', voices: 'on', ...s };
     const qp = new URLSearchParams(location.search).get('quality');
     if (qp) this.settings.quality = qp;
     if (!QUALITY[this.settings.quality]) this.settings.quality = 'medium';
@@ -168,6 +169,7 @@ export class Game {
     this.population = new Population(this);
     this.audio = new Audio(this);
     this.hud = new HUD(this);
+    this.voice = new VoiceSystem(this);
     this.menu = new Menu(this);
     this.gps = new GPS(this);
     this.interactions = new Interactions(this);
@@ -271,6 +273,7 @@ export class Game {
 
   setPaused(on) {
     this.paused = on;
+    if (on && this.voice) this.voice.stop();
     if (this.audio.ctx) {
       if (on) {
         this.audio.engGain.gain.value = 0;
@@ -564,6 +567,7 @@ export class Game {
     this.landmarks.update(this.time, this.env, dt);
     this.hud.update(dt);
     this.audio.update(dt);
+    this.voice.update(dt);
 
     this.saveT -= dt;
     if (this.saveT <= 0) {

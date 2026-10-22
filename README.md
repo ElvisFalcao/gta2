@@ -104,6 +104,11 @@ go cold, find a lost dog, give someone a lift, or chase off skollies.
 **Free-roam activities** — outdoor gym mini-game (muscle makes you hit harder and Sizwe bulks up), beaches
 (heal + pass time), food stalls, cableway + viewpoint, minibus taxi fares, safehouse save & rest, 15 hidden proteas.
 
+**Street voices** — people talk: they greet you, chat about load shedding and the Bokke, call out taxi routes at the
+rank, sell Gatsbys, shout when you bump them, nearly run them over, hoot at them, punch them or take their car, and gang
+members and cops shout during fights and chases — in English, Kaaps, Afrikaans and isiXhosa (with English subtitles in
+the speech bubble). *Pause → Settings → Street voices* switches between voices + bubbles, bubbles only, or off.
+
 **Respect** comes from missions, side jobs, taxi fares, gym sets, proteas and the view from Table Mountain.
 Each new story mission shows how much it needs on the map and in the pause menu.
 
@@ -131,11 +136,30 @@ src/core/             util maths, input (touch/keyboard/mouse/gamepad), chase ca
 src/world/            mapData (hand-made Cape Town layout), grid rasteriser, road graph,
                       procedural city generation, meshes, landmarks, sky/day-night
 src/entities/         player, people (skinned blocky humans + dogs), vehicles
-src/systems/          traffic & vehicles, police, population, particles/markers, audio, save
+src/systems/          traffic & vehicles, police, population, particles/markers, audio, street voices, save
+src/data/barks.js     every street line (with ids for the voice recordings)
+assets/voice/         recording script, manifest and (once recorded) the voice clips
 src/missions/         mission engine, story missions, side jobs, activities
 src/ui/               HUD + minimap + GPS, pause menu + full map
 tools/                headless smoke tests and an automatic story playthrough (Playwright)
 ```
+
+### Recording real voices
+
+Until someone records them, street lines are spoken by the browser's text-to-speech (a South African English voice
+when the device has one). To replace them with real voices:
+
+1. Run `node tools/voice-script.mjs`. It writes `assets/voice/SCRIPT.md` (a recording script per voice) and
+   `assets/voice/script.csv`. Start with the **★ first-pass** lines: one woman's and one man's take of each line,
+   which the other voices of the same gender borrow until their own takes exist.
+2. Record each line as `assets/voice/<voice>/<id>.mp3` (`.m4a`, `.ogg` or `.wav` also work): mono, short, a little
+   silence either side. Get a signed release from every speaker, and have native speakers check the Kaaps,
+   Afrikaans and isiXhosa first.
+3. Run `node tools/voice-script.mjs` again: it updates `assets/voice/manifest.json`, and the game plays the clips
+   (panned towards the speaker) instead of text-to-speech. Anything still missing keeps using text-to-speech.
+
+All lines live in `src/data/barks.js` — add a category or a line there and re-run the script.
+The one-file build has no audio files, so it always uses text-to-speech.
 
 ### Writing a new mission
 
@@ -168,6 +192,7 @@ npx http-server -p 8080 -c-1 . &
 node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots basic   # boots + intro
 node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots story   # plays all 10 missions automatically
 node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots gamepad # drives the game with a fake Xbox pad
+node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots voice   # street voices, bubbles, recorded clips
 ```
 
 ---

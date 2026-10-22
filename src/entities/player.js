@@ -367,7 +367,10 @@ export class Player {
     this.z = v.z;
     this.y = 0;
     this.heading = v.heading;
-    if (g_hornPressed(input) && !this.locked) this.game.audio.horn();
+    if (g_hornPressed(input) && !this.locked) {
+      this.game.audio.horn();
+      if (this.game.voice) this.game.voice.onHorn();
+    }
     if (g_regen(this)) this.health = Math.min(this.maxHealth, this.health + 2.5 * dt);
     this.rig.group.position.set(this.x, this.y, this.z);
   }

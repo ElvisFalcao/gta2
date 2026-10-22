@@ -331,3 +331,16 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ---------------------------------------------------------------- street voices */
+#speech {
+  position: fixed; left: 0; top: 0; max-width: min(300px, 46vw); padding: 6px 10px 7px; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94); color: #15191e; font-size: 14px; font-weight: 600; line-height: 1.25;
+  text-align: center; pointer-events: none; z-index: 3; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35); will-change: transform;
+}
+#speech::after { content: ''; position: absolute; left: 50%; bottom: -7px; margin-left: -7px; border: 7px solid transparent; border-bottom: 0; border-top-color: rgba(255, 255, 255, 0.94); }
+#speech .g { display: block; margin-top: 2px; font-size: 11.5px; font-weight: 500; font-style: italic; color: #4c5866; }
+#speech .g.hidden, #speech.hidden, #speech.off { display: none; }
+@media (max-height: 520px), (max-width: 760px) {
+  #speech { font-size: 12px; max-width: 220px; }
+}
