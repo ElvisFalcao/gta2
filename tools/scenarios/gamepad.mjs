@@ -13,9 +13,9 @@ export default async function ({ page, run, sleep, shot }) {
   const sim = (s) => run((s) => window.__game.simulate(s), s);
   const tap = async (i, paused = false) => {
     await run((i) => window.__setBtn(i, true), i);
-    if (paused) await sleep(250); else await sim(0.1);
+    if (paused) await sleep(700); else await sim(0.1);
     await run((i) => window.__setBtn(i, false), i);
-    if (paused) await sleep(250); else await sim(0.1);
+    if (paused) await sleep(700); else await sim(0.1);
   };
   // A on the title screen starts a new game
   await run(() => window.__setBtn(0, true));
