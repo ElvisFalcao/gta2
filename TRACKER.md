@@ -3,7 +3,7 @@ name: Mother City
 category: Personal
 client:
 type: Game
-stage: Building
+stage: Polish
 tools: [Claude Code]
 started: 2026-10-16
 updated: 2026-10-23
@@ -57,16 +57,16 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [ ] Shown to first players, with their feedback collected
 
 ## Next up
-- Try the new systems on the iPhone at https://elvisfalcao.github.io/gta2/: buy a pistol at Sipho's Hardware (Woodstock), feel the aim assist (Settings → Aim assist), switch weapons with the button above RUN, take a boxing lesson in Langa, eat a few gatsbys and watch Sizwe slow down. Note what feels off.
-- Balance pass once played: weapon prices vs mission pay, how fast fat builds and burns, how hard armed cops hit.
-- The sunny-toon restyle is live everywhere; only the minimap and big-map colours are still the old style.
-- Medium quality is about 780k triangles in Bo-Kaap and 1M in the city centre; if the iPhone stutters, drop tree outlines on Medium too (`buildTrees` in `src/world/cityMeshes.js`).
-- Play with sound on and listen to the AI street voices (`assets/voice/ai/`); fix spellings in `WORDS` in `tools/voice-gen/generate.py` and regenerate with `--ids <id> --force`.
-- Get native speakers to check the Kaaps, Afrikaans and isiXhosa lines in `src/data/barks.js`; record the ★ first-pass lines as `assets/voice/<voice>/<id>.mp3`, then run `node tools/voice-script.mjs`.
-- Decide which repo is the real Mother City (gta2 is far ahead of gta3; gta is empty).
-- After changes run `features` and `story` (`node tools/smoke.mjs <url> <dir> features|story`).
+- **Playtest (owner):** play the whole story at https://elvisfalcao.github.io/gta2/ on the iPhone (Add to Home Screen, Medium quality) and on the PC. Along the way try the new systems: buy a pistol at Sipho's Hardware (Woodstock), feel the aim assist (Settings → Aim assist), switch weapons with the button above RUN, take the three boxing lessons in Langa, eat a few gatsbys and work them off at the gym. Write down bugs, slow spots and anything confusing, then hand the list to the next session.
+- **Next session:** fix the playtest list first, then tick the matching *Quality* items (played start to finish, touch controls comfortable, smooth at Medium, restyle approved, weapons / body / boxing tried).
+- Balance after the playtest: weapon prices vs mission pay, how fast fat builds and burns, how hard armed cops hit.
+- If the iPhone stutters: drop tree outlines on Medium too (`buildTrees` in `src/world/cityMeshes.js`); Medium is about 780k triangles in Bo-Kaap and 1M in the city centre.
+- Ship items still open: link preview image for WhatsApp, a public name that doesn't use "GTA", and picking one repo (gta2 is far ahead of gta3; gta is empty).
+- Voices: native speakers to check the Kaaps, Afrikaans and isiXhosa lines in `src/data/barks.js`; record the ★ lines as `assets/voice/<voice>/<id>.mp3`, then run `node tools/voice-script.mjs`.
+- After any change run `features` and `story` (`node tools/smoke.mjs <url> <dir> features|story`).
 
 ## Log
+- 2026-10-23 · Claude Code · Build work for this round is finished; stage moved to Polish. Handing over to a full playtest on the iPhone and PC.
 - 2026-10-23 · Claude Code · Tools & guns (cricket bat, spanner, pistol, SMG, shotgun) with Sipho's Hardware in Woodstock, pickups, aim assist + lock-on reticle, armed cops at 3 stars; visible body (gym muscle, junk-food fat that slows you down, fruit cart); Langa Boxing Club lessons (hook, uppercut, body shot combos); Pause → Title screen. `tools/scenarios/features.mjs` (18 checks) and `movesheet.mjs`.
 - 2026-10-23 · Claude Code · Waterfront, boats and murals restyle: the Wharf gets shopfront glass, upper windows and striped awnings; brighter clock tower, aquarium with portholes and fish-and-chips canopy; rounded outlined gondolas on the big wheel; chubby inked harbour boats and container ships; Woodstock murals repainted as cartoon murals (protea, Table Mountain, a face or a snoek, plus a slogan) with ink frames.
 - 2026-10-23 · Claude Code · Polish pass: smooth toon mountains with ink silhouettes and brighter fynbos / sandstone colours, a fuller tablecloth cloud, puffy outlined tree crowns and rounder bushes (no tree outlines on Low quality), toon landmarks with ink shells (stadium, castle rebuilt as five walls, cable car, lighthouse). `tools/scenarios/landmarks.mjs` screenshots them.
