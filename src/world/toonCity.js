@@ -154,20 +154,31 @@ function gableShape(w, h) {
   s.lineTo(-w / 2, 0);
   return s;
 }
-const extrude = (sh, d) => {
-  const g = new THREE.ExtrudeGeometry(sh, { depth: d, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 1, curveSegments: 10 });
-  g.deleteAttribute('uv');
+// flat cut-outs (front face + back face), coarse curves: thousands of these sit in one city mesh
+function flatGable(w, h, z) {
+  const f = new THREE.ShapeGeometry(gableShape(w, h), 4);
+  const pa = f.attributes.position.array, n = pa.length / 3, ia = f.index.array;
+  const pos = new Float32Array(pa.length * 2);
+  for (let i = 0; i < n; i++) {
+    pos.set([pa[i * 3], pa[i * 3 + 1], z], i * 3); // front copy
+    pos.set([pa[i * 3], pa[i * 3 + 1], z - 0.02], (n + i) * 3); // back copy, triangles reversed below
+  }
+  const idx = [...ia];
+  for (let t = 0; t < ia.length; t += 3) idx.push(ia[t] + n, ia[t + 2] + n, ia[t + 1] + n);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setIndex(idx);
   g.computeVertexNormals();
   return g;
-};
-/** Unit-ish gables (3 m wide, 1.8 m tall); scale per building. Extruded along +z from 0 to 0.3. */
-export const GABLE = extrude(gableShape(3.0, 1.8), 0.3);
-export const GABLE_TRIM = extrude(gableShape(3.36, 2.08), 0.3);
+}
+/** Gables 3 m wide, 1.8 m tall, standing in the z = 0..0.3 slab (front face at z = 0.3). */
+export const GABLE = flatGable(3.0, 1.8, 0.3);
+export const GABLE_TRIM = flatGable(3.36, 2.08, 0.28);
 export const TRIM_COLOUR = TRIM;
 
 // ---------------------------------------------------------------- ink outlines for boxy buildings
 /** A slightly bigger box drawn back-faces-only in dark ink around each building = a cartoon outline. */
-export function buildingOutlines(buildings, pad = 0.14) {
+export function buildingOutlines(buildings, pad = 0.07) {
   const pos = [], idx = [];
   let n = 0;
   for (const b of buildings) {

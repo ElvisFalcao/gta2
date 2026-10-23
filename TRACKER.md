@@ -6,7 +6,7 @@ type: Game
 stage: Building
 tools: [Claude Code]
 started: 2026-10-16
-updated: 2026-10-22
+updated: 2026-10-23
 target:
 live: https://elvisfalcao.github.io/gta2/
 repo: https://github.com/ElvisFalcao/gta2
@@ -51,16 +51,18 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [ ] Shown to first players, with their feedback collected
 
 ## Next up
-- Open the look test (`lookdev.html`, or the claude.ai link) on the iPhone, try all three moods, and say what to change. Once approved, roll the style out: people first, then buildings and props, then cars and the HUD.
-- On the iPhone: Add to Home Screen from https://elvisfalcao.github.io/gta2/ and play full screen; note anything about the new touch buttons that still feels wrong.
-- Play with sound on and listen to the AI street voices (`assets/voice/ai/`); note lines that sound wrong. Fix spellings in `WORDS` in `tools/voice-gen/generate.py` and regenerate with `--ids <id> --force`.
-- Review the street lines in `src/data/barks.js` (or `assets/voice/SCRIPT.md`) and get native speakers to check the Kaaps, Afrikaans and isiXhosa.
-- Record the ★ first-pass voice lines as `assets/voice/<voice>/<id>.mp3`, then run `node tools/voice-script.mjs` so the game uses them.
-- Play the whole story on the iPhone at https://elvisfalcao.github.io/gta2/ and note what breaks.
+- Rolling the sunny-toon style into the game in stages, pushing after each: 1 people + fighting (done), 2 city (done), 3 cars (next: rounded toon shells with ink outlines, same sizes and handling), 4 HUD and menus.
+- Check the restyled city on the iPhone at Medium quality; Bo-Kaap is about 600k triangles and the city centre about 830k, so watch the frame rate there.
+- On the iPhone: Add to Home Screen from https://elvisfalcao.github.io/gta2/ and play full screen; note anything about the touch buttons that still feels wrong.
+- Play with sound on and listen to the AI street voices (`assets/voice/ai/`); fix spellings in `WORDS` in `tools/voice-gen/generate.py` and regenerate with `--ids <id> --force`.
+- Get native speakers to check the Kaaps, Afrikaans and isiXhosa lines in `src/data/barks.js`.
+- Record the ★ first-pass voice lines as `assets/voice/<voice>/<id>.mp3`, then run `node tools/voice-script.mjs`.
 - Decide which repo is the real Mother City (gta2 is far ahead of gta3; gta is empty).
 - Run `npm run playthrough` after changes to check all 10 missions still complete.
 
 ## Log
+- 2026-10-23 · Claude Code · City restyle (stage 2): toon buildings with cartoon window frames, Cape Dutch gables on Bo-Kaap and Victorian rows, ink outlines on every building, brighter palettes; ground, roads and trees toon-shaded. `tools/scenarios/tour.mjs` and `perf.mjs` for screenshots and triangle counts.
+- 2026-10-23 · Claude Code · Game people restyle (stage 1): everyone in the game is now a sunny-toon skinned character with bending joints, the jab / cross / kick combo, guard stance, knockdown and get-up, hit-stop and POW bursts.
 - 2026-10-23 · Claude Code · Look test: fighting — guard stance, jab / cross / roundhouse-kick combo with input buffering, hit reactions, knockdown and get-up, hit-stop, camera shake and POW bursts (`src/lookdev/moves.js`, `tools/lookdev-fight.mjs`). Mechanics handover in `docs/mechanics-handover.md`.
 - 2026-10-23 · Claude Code · Look test: characters now bend at elbows, wrists, knees and ankles, with a real walk and run cycle, idle weight shifts, an elbow wave and a proper sitting pose; `tools/lookdev-anim.mjs` makes filmstrips.
 - 2026-10-23 · Claude Code · Look test for art direction A (sunny toon): `lookdev.html` + `src/lookdev/` — toon shading, ink outlines, rounded characters with painted faces, Bo-Kaap street, golden hour / midday / night.

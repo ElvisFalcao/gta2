@@ -183,8 +183,8 @@ function varyColor(hex, rng) {
 
 function roofColorFor(st, rng) {
   if (st.roof === 'slab') return rng.pick(st.roofColors);
-  if (st.roof === 'gable') return rng.pick(['#a9533a', '#5b6670', '#8e3b2e', '#4f7a5a', '#b5683f', '#6b5d52']);
-  return rng.pick(['#8d8f8a', '#9a9a94', '#7e817d', '#a7a39a']);
+  if (st.roof === 'gable') return rng.pick(['#d8643f', '#c0503a', '#3f7fb0', '#4f9a5a', '#e0884a', '#8a6a5a']);
+  return rng.pick(['#cfc8bc', '#d8d2c6', '#c4bfb4', '#e0d8cc']);
 }
 
 function placeTrees(grid, rng) {

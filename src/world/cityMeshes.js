@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { WORLD, LAND, WATER_HOLES, MOUNTAINS } from './mapData.js';
 import { T, mountainHeight } from './grid.js';
 import { MeshKit, GEO, vcMaterial } from '../core/meshkit.js';
+import { RAMP_SOFT } from '../core/toon.js';
+import { makeToonFacade, toonWallMaterial, GABLE, GABLE_TRIM, TRIM_COLOUR, buildingOutlines } from './toonCity.js';
 import { RNG, clamp, lerp, valueNoise, smoothstep } from '../core/util.js';
 import {
   makeFacade, makeRoadTexture, makeAsphaltTexture, makeZebraTexture, makeSidewalkTexture,
@@ -11,6 +13,7 @@ import {
 } from './textures.js';
 
 const C = (hex) => new THREE.Color(hex);
+const toonMat = (o) => new THREE.MeshToonMaterial({ gradientMap: RAMP_SOFT, ...o });
 
 export class CityMeshes {
   constructor(scene, grid, roads, city, quality) {
@@ -127,7 +130,7 @@ export class CityMeshes {
       uv.setXY(i, (x - g.minX) / (g.w * g.cell), 1 - (z - g.minZ) / (g.h * g.cell));
     }
     geo.rotateX(-Math.PI / 2);
-    const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex }));
+    const mesh = new THREE.Mesh(geo, toonMat({ map: tex }));
     mesh.name = 'ground';
     this.add(mesh, { receive: true });
 
@@ -229,9 +232,9 @@ export class CityMeshes {
     const roadTex = makeRoadTexture();
     const asphalt = makeAsphaltTexture();
     const walkTex = makeSidewalkTexture();
-    const roadMesh = new THREE.Mesh(roadKit.build(), new THREE.MeshLambertMaterial({ map: roadTex }));
-    const discMesh = new THREE.Mesh(discKit.build(), new THREE.MeshLambertMaterial({ map: asphalt, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
-    const walkMesh = new THREE.Mesh(walkKit.build(), new THREE.MeshLambertMaterial({ map: walkTex }));
+    const roadMesh = new THREE.Mesh(roadKit.build(), toonMat({ map: roadTex }));
+    const discMesh = new THREE.Mesh(discKit.build(), toonMat({ map: asphalt, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+    const walkMesh = new THREE.Mesh(walkKit.build(), toonMat({ map: walkTex }));
     const curbMesh = new THREE.Mesh(curbKit.build(), vcMaterial());
     roadMesh.name = 'roads';
     for (const m of [roadMesh, discMesh, walkMesh, curbMesh]) this.add(m);
@@ -292,10 +295,7 @@ export class CityMeshes {
       this.addRoof(roofKit, b, rng);
     }
     for (const [style, kit] of Object.entries(kits)) {
-      const fac = makeFacade(style, 7);
-      const mat = new THREE.MeshLambertMaterial({
-        map: fac.map, vertexColors: true, emissiveMap: fac.emissive, emissive: new THREE.Color('#ffd9a0'), emissiveIntensity: 0,
-      });
+      const mat = toonWallMaterial(makeToonFacade(style, 7));
       this.wallMats.push(mat);
       const mesh = new THREE.Mesh(kit.build(), mat);
       mesh.name = 'walls_' + style;
@@ -304,6 +304,8 @@ export class CityMeshes {
     const roofs = new THREE.Mesh(roofKit.build(), vcMaterial());
     roofs.name = 'roofs';
     this.add(roofs, { cast: true, receive: true });
+    // cartoon ink outline around every building (one draw call)
+    this.add(buildingOutlines(this.city.buildings), { cast: false, receive: false });
   }
 
   addRoof(k, b, rng) {
@@ -356,14 +358,24 @@ export class CityMeshes {
       if (b.h > 50 && rng.chance(0.6)) k.cyl(cx, h + (b.h > 40 ? 4 : 0), cz, 0.15, 8, '#dddddd', 8);
     }
     if (b.style === 'bokaap' && rng.chance(0.25)) k.block(cx, h, cz, 1.6, 1.2, 1.6, '#e8e8e8'); // water tank
+    // Cape Dutch gables on Bo-Kaap and Victorian fronts (both street-facing long sides)
+    if ((b.style === 'bokaap' && rng.chance(0.6)) || (b.style === 'victorian' && rng.chance(0.3))) {
+      const alongX = L >= D, w = alongX ? L : D, s = Math.min(w * 0.7, 3.6) / 3;
+      const sides = alongX ? [[cx, z1 - 0.15, 0], [cx, z0 + 0.15, Math.PI]] : [[x1 - 0.15, cz, Math.PI / 2], [x0 + 0.15, cz, -Math.PI / 2]];
+      for (const [gx, gz, ry] of sides) {
+        const back = 0.1; // the white trim sits just behind the coloured face
+        k.add(GABLE_TRIM, { x: gx - Math.sin(ry) * back, y: h - 0.05, z: gz - Math.cos(ry) * back, ry, sx: s, sy: s, sz: 1, color: TRIM_COLOUR });
+        k.add(GABLE, { x: gx, y: h - 0.05, z: gz, ry, sx: s * 0.95, sy: s * 0.95, sz: 1, color: b.color });
+      }
+    }
   }
 
   // ------------------------------------------------------------------ trees
   buildTrees() {
     const T_ = this.city.trees;
     const dummy = new THREE.Object3D();
-    const trunkMat = new THREE.MeshLambertMaterial({ color: '#6b4f36' });
-    const leafMat = new THREE.MeshLambertMaterial({ color: '#ffffff' });
+    const trunkMat = toonMat({ color: '#7a5a3c' });
+    const leafMat = toonMat({ color: '#ffffff' });
     const rng = new RNG(31);
     const make = (list, trunkGeo, crownGeo, trunkH, crownY, crownScale, palette) => {
       if (!list.length) return;

@@ -79,15 +79,15 @@ export const DISTRICTS = [
 ];
 
 export const STYLES = {
-  office: { wall: 'office', h: [16, 62], size: [14, 28], gap: 2, roof: 'flat', colors: ['#9fb4c7', '#7d97ad', '#b9c4cc', '#8aa6a0', '#c8c2b4', '#6f8396', '#a8b8a8'] },
-  victorian: { wall: 'house', h: [9, 15], size: [10, 16], gap: 0, roof: 'flat', colors: ['#e8b04a', '#d9674e', '#6fa8a1', '#e9dcc0', '#a3c26a', '#cf8fb3', '#f0e3a0'] },
-  apartment: { wall: 'apartment', h: [14, 42], size: [14, 22], gap: 4, roof: 'flat', colors: ['#f2efe6', '#e8e2d2', '#dfe6e8', '#f4ead8', '#d9d9cf'] },
-  apartment_low: { wall: 'apartment', h: [8, 22], size: [12, 20], gap: 4, roof: 'flat', colors: ['#f2efe6', '#e6dcc8', '#dde3df', '#efe2cf'] },
-  villa: { wall: 'villa', h: [5, 10], size: [10, 16], gap: 4, roof: 'flat', colors: ['#f7f5ef', '#ece6da', '#f1efe9', '#e2ddd2'] },
+  office: { wall: 'office', h: [16, 62], size: [14, 28], gap: 2, roof: 'flat', colors: ['#9cc3e6', '#7fb2d8', '#bcd7e6', '#8fd0c0', '#e6d6b8', '#7aa0c8', '#b8d8b0', '#f0c8b0'] },
+  victorian: { wall: 'house', h: [9, 15], size: [10, 16], gap: 0, roof: 'flat', colors: ['#ffc24a', '#f26b52', '#4fc2b6', '#f5e6c4', '#a8d860', '#e88fc4', '#ffe27a', '#6fb0ff'] },
+  apartment: { wall: 'apartment', h: [14, 42], size: [14, 22], gap: 4, roof: 'flat', colors: ['#fff4e0', '#ffe0c8', '#d8eef6', '#e6f4d8', '#f6e0ee', '#fff0b8'] },
+  apartment_low: { wall: 'apartment', h: [8, 22], size: [12, 20], gap: 4, roof: 'flat', colors: ['#fff4e0', '#ffdcc0', '#d4ecf4', '#e4f2d4', '#f8dcea'] },
+  villa: { wall: 'villa', h: [5, 10], size: [10, 16], gap: 4, roof: 'flat', colors: ['#ffffff', '#fff2dc', '#f4f8ff', '#ffe8e0', '#eef8ea'] },
   bokaap: { wall: 'house', h: [6, 8], size: [6, 10], gap: 0, roof: 'flat', colors: ['#ff5fa2', '#7ed957', '#38c6d9', '#ffd23f', '#ff8c42', '#a86cf0', '#3f8efc', '#f25f5c', '#5ce1b9'] },
-  house: { wall: 'house', h: [5, 9], size: [8, 14], gap: 4, roof: 'gable', colors: ['#efe6d2', '#e7d3b5', '#d8e0d0', '#f1d6c8', '#e9e2b8', '#cfd8dc'] },
-  industrial: { wall: 'industrial', h: [6, 14], size: [14, 28], gap: 2, roof: 'flat', colors: ['#a5523c', '#8c4a3a', '#9a8f84', '#7d7f7a', '#b46a4a', '#6b6f73'] },
-  township: { wall: 'township', h: [2.8, 3.4], size: [5, 8], gap: 2, roof: 'slab', colors: ['#e7dcc5', '#c9d7e3', '#e8c9a8', '#d7e3c3', '#f0d9e0', '#d9d0c4'], roofColors: ['#3f6fb5', '#b8433a', '#3d8a5a', '#8f9599', '#c98b2a', '#5a5f66'] },
+  house: { wall: 'house', h: [5, 9], size: [8, 14], gap: 4, roof: 'gable', colors: ['#fff0d0', '#ffd8b0', '#d8f0d0', '#ffd6c8', '#fff0a8', '#d0e8f4'] },
+  industrial: { wall: 'industrial', h: [6, 14], size: [14, 28], gap: 2, roof: 'flat', colors: ['#c8603e', '#a85a44', '#b0a090', '#8c9090', '#d07a4c', '#7c8a96'] },
+  township: { wall: 'township', h: [2.8, 3.4], size: [5, 8], gap: 2, roof: 'slab', colors: ['#ffe6b8', '#bfe0ff', '#ffc890', '#d4f0b0', '#ffd0e0', '#f0e0c8', '#a8e8e0'], roofColors: ['#3f6fb5', '#b8433a', '#3d8a5a', '#8f9599', '#c98b2a', '#5a5f66'] },
 };
 
 // ---------------------------------------------------------------------------

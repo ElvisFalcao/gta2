@@ -1,6 +1,7 @@
 // Merges many primitives into one vertex-coloured BufferGeometry (one draw call).
 
 import * as THREE from 'three';
+import { RAMP_SOFT } from './toon.js';
 
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
@@ -136,4 +137,6 @@ export class MeshKit {
   }
 }
 
-export const vcMaterial = (opts = {}) => new THREE.MeshLambertMaterial({ vertexColors: true, ...opts });
+// sunny-toon shading everywhere; flat-shaded things (mountains) keep Lambert, which supports flatShading
+export const vcMaterial = (opts = {}) =>
+  opts.flatShading ? new THREE.MeshLambertMaterial({ vertexColors: true, ...opts }) : new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: RAMP_SOFT, ...opts });
