@@ -4,6 +4,7 @@
 
 import * as THREE from 'three';
 import { toon, outlineMaterial, inked, roundedBox, SHAPES, Merger, faceTexture, RAMP } from './toon.js';
+import { GUARD, MOVES } from './moves.js';
 
 const INK = outlineMaterial('#2a1c16', 0.022);
 const MAT = toon();
@@ -21,6 +22,10 @@ export const LOOKS = {
     skin: '#c99470', shirt: '#8c2f39', pants: '#6d6a63', shoe: '#3a2a1f', sole: '#1e1510', hat: 'cap', hatColor: '#4b4f58',
     hair: '#b0a090', sleeves: 'long', build: 1.0, moustache: '#d8d0c0', belly: 1.12,
   },
+  thug: {
+    skin: '#4f2f1d', shirt: '#c0392b', stripe: '#1b1b1b', pants: '#2e3a52', shoe: '#1b1b1b', sole: '#f2f2f2', hat: 'cap', hatColor: '#1b1b1b',
+    hair: '#141414', sleeves: 'short', build: 1.12,
+  },
   sisi: {
     skin: '#8a5636', shirt: '#ff5fa2', pants: '#3b6fd9', shoe: '#ffffff', sole: '#ff5fa2', hat: 'none', hair: '#1a120c',
     braids: true, sleeves: 'short', build: 0.95, lashes: true,
@@ -32,9 +37,14 @@ export class Person {
     const L = (this.look = look);
     const b = L.build || 1;
     this.root = new THREE.Group();
+    this.off = new THREE.Group(); // pivot at the feet: lunges, knock-back, falling over
+    this.root.add(this.off);
     this.hips = new THREE.Group();
     this.hips.position.y = 0.78;
-    this.root.add(this.hips);
+    this.off.add(this.hips);
+    this.fight = false; // fighting stance
+    this.stanceW = 0;
+    this.act = null;
     this.t = Math.random() * 10;
     this.speed = 0;
 
@@ -150,6 +160,120 @@ export class Person {
       this.hips.add(hip);
       return { hip, knee, ankle, side: s };
     });
+
+    // named joints for keyframed moves (see moves.js); L = lead side (+x), R = rear side (-x)
+    const J = (this.J = {});
+    const add = (name, obj, prop, axis) => (J[name] = { obj: obj[prop], axis });
+    add('off.px', this.off, 'position', 'x');
+    add('off.py', this.off, 'position', 'y');
+    add('off.pz', this.off, 'position', 'z');
+    add('off.rx', this.off, 'rotation', 'x');
+    add('hips.py', this.hips, 'position', 'y');
+    for (const ax of ['y', 'z']) add('hips.r' + ax, this.hips, 'rotation', ax);
+    for (const ax of ['x', 'y', 'z']) {
+      add('torso.r' + ax, this.torso, 'rotation', ax);
+      add('head.r' + ax, this.head, 'rotation', ax);
+    }
+    for (const [n, a] of [['armR', this.arms[0]], ['armL', this.arms[1]]]) {
+      for (const ax of ['x', 'y', 'z']) add(`${n}.s${ax}`, a.shoulder, 'rotation', ax);
+      add(n + '.ex', a.elbow, 'rotation', 'x');
+      add(n + '.ez', a.elbow, 'rotation', 'z');
+      add(n + '.wx', a.wrist, 'rotation', 'x');
+    }
+    for (const [n, l] of [['legR', this.legs[0]], ['legL', this.legs[1]]]) {
+      add(n + '.hx', l.hip, 'rotation', 'x');
+      add(n + '.hz', l.hip, 'rotation', 'z');
+      add(n + '.kx', l.knee, 'rotation', 'x');
+      add(n + '.ax', l.ankle, 'rotation', 'x');
+    }
+  }
+
+  /** Start a move from moves.js. onHit fires at the moment of contact. */
+  play(name, { onHit = null, onEnd = null } = {}) {
+    const m = MOVES[name];
+    this.act = { name, m, t: 0, onHit, onEnd, hitDone: false, start: this.snapshot() };
+    return m;
+  }
+
+  get busy() {
+    return !!this.act;
+  }
+
+  snapshot() {
+    const o = {};
+    for (const k in this.J) o[k] = this.J[k].obj[this.J[k].axis];
+    return o;
+  }
+
+  /** Pose of a move at time t (keys interpolated, gaps filled from the guard). */
+  sample(m, t) {
+    const K = m.keys;
+    let i = 0;
+    while (i < K.length - 2 && t >= K[i + 1].t) i++;
+    const a = K[i], b = K[i + 1];
+    let u = THREE.MathUtils.clamp((t - a.t) / Math.max(1e-4, b.t - a.t), 0, 1);
+    if (b.ease === 'snap') {
+      const c = 1.3, v = u - 1;
+      u = 1 + (c + 1) * v * v * v + c * v * v; // fast out with a small overshoot
+    } else u = u * u * (3 - 2 * u);
+    const out = {};
+    for (const k in GUARD) {
+      const va = a.p && k in a.p ? a.p[k] : GUARD[k];
+      const vb = b.p && k in b.p ? b.p[k] : GUARD[k];
+      out[k] = va + (vb - va) * u;
+    }
+    return out;
+  }
+
+  /** Blend the fighting stance and the current move over the walk / idle pose. */
+  applyFight(dt, k) {
+    this.stanceW += ((this.fight ? 1 : 0) - this.stanceW) * Math.min(1, dt * 7);
+    let target = null, w = 0;
+    if (this.act) {
+      const A = this.act, m = A.m;
+      A.t += dt;
+      if (!A.hitDone && m.hit !== undefined && A.t >= m.hit) A.fireHit = true; // fired once this frame's pose is applied
+      if (A.t >= m.dur) {
+        // bake any step the move took into the real position
+        if (m.keepOffset) {
+          const o = this.off.position, ry = this.root.rotation.y;
+          this.root.position.x += Math.sin(ry) * o.z + Math.cos(ry) * o.x;
+          this.root.position.z += Math.cos(ry) * o.z - Math.sin(ry) * o.x;
+        }
+        this.off.position.set(0, 0, 0);
+        this.off.rotation.set(0, 0, 0);
+        this.act = null;
+        if (A.onEnd) A.onEnd();
+      } else {
+        target = this.sample(m, A.t);
+        // ease in from wherever the body was; ease out to the walk pose if not in a stance
+        w = Math.min(1, A.t / 0.06) * (this.stanceW > 0.5 ? 1 : Math.min(1, (m.dur - A.t) / 0.12));
+      }
+    }
+    const sw = this.stanceW;
+    if (sw < 0.001 && !target) return;
+    const bounce = Math.sin(this.t * 7.5);
+    for (const key in this.J) {
+      const j = this.J[key], cur = j.obj[j.axis];
+      let v = cur;
+      if (sw > 0.001 && key in GUARD && !key.startsWith('off.')) {
+        let g = GUARD[key];
+        if (key === 'hips.py') g += bounce * 0.012;
+        if (key === 'torso.rz') g += Math.sin(this.t * 3.7) * 0.03;
+        if (key === 'armL.sx' || key === 'armR.sx') g += Math.sin(this.t * 3.7 + (key[3] === 'L' ? 0 : 1.5)) * 0.05;
+        // while moving in a stance the legs keep walking (a shuffle), the upper body keeps its guard
+        const legs = key.startsWith('leg') || key === 'hips.ry';
+        v = cur + (g - cur) * sw * (legs ? 1 - k : 1);
+      }
+      if (target) v = v + (target[key] - v) * w;
+      j.obj[j.axis] = v;
+    }
+    if (this.act && this.act.fireHit) {
+      this.act.fireHit = false;
+      this.act.hitDone = true;
+      this.root.updateMatrixWorld(true); // so the fist / foot position is this frame's
+      if (this.act.onHit) this.act.onHit(this.act.m);
+    }
   }
 
   /**
@@ -182,6 +306,7 @@ export class Person {
       }
       this.torso.rotation.set(-0.08 + Math.sin(p * 0.9) * 0.012, 0, 0);
       this.head.rotation.set(0.05, Math.sin(p * 0.27) * 0.35, 0);
+      this.applyFight(dt, 0);
       return;
     }
 
@@ -237,6 +362,7 @@ export class Person {
       a.elbow.rotation.set(0, 0, 1.25 + Math.sin(p * 5) * 0.4);
       a.wrist.rotation.set(0, 0, Math.sin(p * 5 + 0.6) * 0.25);
     }
+    this.applyFight(dt, k);
   }
 }
 

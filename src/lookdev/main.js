@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { buildStreet } from './street.js';
 import { Person, LOOKS } from './people.js';
+import { COMBO } from './moves.js';
 
 const PRESETS = {
   golden: {
@@ -81,7 +82,9 @@ oom.root.position.set(-3, 0.2, 5.7);
 oom.root.rotation.y = Math.PI;
 const sisi = new Person(LOOKS.sisi);
 sisi.root.position.set(6, 0.2, -4.6);
-for (const p of [sizwe, aunty, oom, sisi]) scene.add(p.root);
+const thug = new Person(LOOKS.thug);
+thug.root.visible = false;
+for (const p of [sizwe, aunty, oom, sisi, thug]) scene.add(p.root);
 // oom sits on the bench
 
 let preset = 'golden';
@@ -189,6 +192,141 @@ document.getElementById('ld-run').addEventListener('click', (e) => {
   autoWalk = true;
   e.currentTarget.classList.toggle('on', (autoRun = !autoRun));
 });
+// ---------------------------------------------------------------- fight demo
+const fight = { on: false, combo: 0, comboT: 0, idleT: 0, queued: false, hitstop: 0, shake: 0, fx: [] };
+const SPACING = 1.12; // how far apart the fighters stand
+const fightBtn = document.getElementById('ld-fight'), punchBtn = document.getElementById('ld-punch');
+fightBtn.addEventListener('click', () => setFight(!fight.on));
+function setFight(on) {
+  fight.on = on;
+  fightBtn.classList.toggle('on', on);
+  punchBtn.hidden = !on;
+  sizwe.fight = thug.fight = on;
+  thug.root.visible = on;
+  if (on) {
+    autoWalk = false;
+    const p = sizwe.root.position;
+    p.set(THREE.MathUtils.clamp(p.x, -20, 20), 0, 0.4);
+    sizwe.root.rotation.y = Math.PI / 2;
+    thug.root.position.set(p.x + SPACING, 0, 0.4);
+    thug.root.rotation.y = -Math.PI / 2;
+    Object.assign(cam, { yaw: 0.12, pitch: 0.12, dist: 5.2 });
+    fight.idleT = 0;
+  } else autoWalk = true;
+}
+const attack = () => {
+  if (!fight.on) return;
+  fight.idleT = 0;
+  if (sizwe.busy) {
+    fight.queued = true; // buffer the next hit of the combo
+    return;
+  }
+  if (thug.act && thug.act.name === 'knockdown') return;
+  if (fight.comboT <= 0) fight.combo = 0;
+  const name = COMBO[fight.combo % COMBO.length];
+  fight.combo++;
+  sizwe.play(name, { onHit: (m) => landHit(m, name), onEnd: () => (fight.comboT = 0.7) });
+};
+punchBtn.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  attack();
+});
+window.addEventListener('keydown', (e) => { if (e.code === 'KeyJ' || e.code === 'Space') attack(); });
+
+const POW = ['POW!', 'WHAP!', 'BAM!', 'KAPOW!'];
+function powTexture(word, heavy) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.translate(128, 128);
+  g.beginPath();
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2, r = i % 2 ? 70 : 118 - Math.random() * 14;
+    g.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  g.closePath();
+  g.fillStyle = heavy ? '#ff5a3c' : '#ffd23f';
+  g.strokeStyle = '#1b1410';
+  g.lineWidth = 10;
+  g.fill();
+  g.stroke();
+  g.rotate(-0.15);
+  g.font = `${heavy ? 64 : 58}px "Bebas Neue", Impact, sans-serif`;
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.lineWidth = 9;
+  g.strokeText(word, 0, 4);
+  g.fillStyle = '#ffffff';
+  g.fillText(word, 0, 4);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const _hp = new THREE.Vector3();
+function landHit(m, name) {
+  const d = sizwe.root.position.distanceTo(thug.root.position);
+  if (d > m.reach + 0.25 || (thug.act && thug.act.name === 'knockdown')) return; // whiff
+  const limb = name === 'kick' ? sizwe.legs[0].ankle : name === 'cross' ? sizwe.arms[0].wrist : sizwe.arms[1].wrist;
+  limb.getWorldPosition(_hp);
+  thug.play(m.heavy ? 'knockdown' : 'hit');
+  fight.hitstop = m.heavy ? 0.13 : 0.07;
+  fight.shake = m.heavy ? 0.22 : 0.1;
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: powTexture(m.heavy ? 'KAPOW!' : POW[Math.floor(Math.random() * 3)], m.heavy), depthTest: false, transparent: true }));
+  spr.position.copy(_hp).add(new THREE.Vector3(0, 0.15, 0.25));
+  spr.renderOrder = 10;
+  scene.add(spr);
+  fight.fx.push({ spr, t: 0, size: m.heavy ? 1.1 : 0.7 });
+}
+
+function stepFight(dt) {
+  // hit-stop: the fighters freeze for a beat on contact so the hit lands
+  let fdt = dt;
+  if (fight.hitstop > 0) {
+    fight.hitstop -= dt;
+    fdt = 0;
+  }
+  fight.comboT -= dt;
+  fight.idleT += dt;
+  if (fight.queued && !sizwe.busy) {
+    fight.queued = false;
+    attack();
+  }
+  // demo: if nobody presses anything, Sizwe throws the combo himself
+  if (fight.idleT > 1.6 && !sizwe.busy && !thug.busy) {
+    attack();
+    fight.idleT = 1.6 - 0.25;
+    if (fight.combo % COMBO.length === 0) fight.idleT = -0.4;
+  }
+  // keep fighting distance: shuffle in when the other one has been knocked back
+  const a = sizwe.root.position, b = thug.root.position;
+  const dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz) || 1;
+  let sizweSpeed = 0, thugSpeed = 0;
+  if (!sizwe.busy && !(thug.act && thug.act.name === 'knockdown') && Math.abs(d - SPACING) > 0.05) {
+    sizweSpeed = Math.min(1.4, Math.abs(d - SPACING) * 4);
+    a.x += (dx / d) * Math.sign(d - SPACING) * sizweSpeed * fdt;
+    a.z += (dz / d) * Math.sign(d - SPACING) * sizweSpeed * fdt;
+  }
+  if (!sizwe.busy) sizwe.root.rotation.y = Math.atan2(dx, dz);
+  if (!thug.busy) thug.root.rotation.y = Math.atan2(-dx, -dz);
+  sizwe.update(fdt, { speed: sizweSpeed });
+  thug.update(fdt, { speed: thugSpeed });
+  // POW bursts pop in, wobble and fade
+  for (let i = fight.fx.length - 1; i >= 0; i--) {
+    const f = fight.fx[i];
+    f.t += dt;
+    const pop = f.t < 0.08 ? f.t / 0.08 : 1 + Math.sin(f.t * 20) * 0.04 * Math.max(0, 1 - f.t * 3);
+    f.spr.scale.setScalar(f.size * pop * (1 + f.t * 0.3));
+    f.spr.material.opacity = Math.max(0, 1 - Math.max(0, f.t - 0.3) / 0.25);
+    f.spr.position.y += dt * 0.3;
+    if (f.t > 0.6) {
+      scene.remove(f.spr);
+      f.spr.material.map.dispose();
+      f.spr.material.dispose();
+      fight.fx.splice(i, 1);
+    }
+  }
+}
+
 window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -216,7 +354,7 @@ function step(dt) {
   const manual = Math.hypot(mx, my) > 0.1;
   if (manual) autoWalk = false;
   let speed = 0;
-  if (manual) {
+  if (manual && !fight.on) {
     const f = new THREE.Vector3(Math.sin(cam.yaw), 0, Math.cos(cam.yaw)).multiplyScalar(-1);
     const r = new THREE.Vector3(-f.z, 0, f.x);
     const dir = f.multiplyScalar(my).add(r.multiplyScalar(-mx));
@@ -226,7 +364,7 @@ function step(dt) {
     dir.normalize();
     sizwe.root.position.addScaledVector(dir, speed * dt);
     sizwe.root.rotation.y = Math.atan2(dir.x, dir.z);
-  } else if (autoWalk) {
+  } else if (autoWalk && !fight.on) {
     speed = autoRun ? 3.6 : 1.35;
     sizwe.root.position.x += walkDir * speed * dt;
     if (sizwe.root.position.x > 14) walkDir = -1;
@@ -237,7 +375,9 @@ function step(dt) {
   p.x = THREE.MathUtils.clamp(p.x, -34, 34);
   p.z = THREE.MathUtils.clamp(p.z, -5.6, 5.6);
   p.y = Math.abs(p.z) > 3.5 ? 0.2 : 0;
-  sizwe.update(dt, { speed });
+  const fightMid = fight.on ? new THREE.Vector3().addVectors(p, thug.root.position).multiplyScalar(0.5) : null;
+  if (fight.on) stepFight(dt);
+  else sizwe.update(dt, { speed });
   aunty.update(dt, { wave: Math.sin(time * 0.5) > 0.2 });
   aunty.root.rotation.y = 0.3 + Math.sin(time * 0.4) * 0.2;
   oom.update(dt, { pose: 'sit' });
@@ -256,15 +396,21 @@ function step(dt) {
   });
   // camera
   if (touring) cam.yaw += dt * 0.12;
-  cam.target.lerp(new THREE.Vector3(p.x, 1.4, p.z), 1 - Math.exp(-dt * 4));
+  cam.target.lerp(fightMid ? new THREE.Vector3(fightMid.x, 1.1, fightMid.z) : new THREE.Vector3(p.x, 1.4, p.z), 1 - Math.exp(-dt * 4));
   const cp = Math.cos(cam.pitch);
   camera.position.set(cam.target.x + Math.sin(cam.yaw) * cam.dist * cp, cam.target.y + Math.sin(cam.pitch) * cam.dist + 0.6, cam.target.z + Math.cos(cam.yaw) * cam.dist * cp);
   camera.lookAt(cam.target.x, cam.target.y + 0.4, cam.target.z);
+  if (fight.shake > 0) {
+    fight.shake = Math.max(0, fight.shake - dt * 1.2);
+    camera.position.x += (Math.random() - 0.5) * fight.shake;
+    camera.position.y += (Math.random() - 0.5) * fight.shake;
+  }
   // keep the shadow box around the action
   sun.target.position.set(cam.target.x, 0, -1);
   sun.position.set(cam.target.x + PRESETS[preset].sunPos[0], PRESETS[preset].sunPos[1], PRESETS[preset].sunPos[2]);
 }
 
 applyPreset(new URLSearchParams(location.search).get('mood') || 'golden');
-window.__ld = { scene, camera, cam, sizwe, aunty, oom, sisi, applyPreset, step, renderer, setAutoWalk: (v) => (autoWalk = v) };
+window.__ld = { scene, camera, cam, sizwe, aunty, oom, sisi, thug, fight, setFight, attack, applyPreset, step, renderer, setAutoWalk: (v) => (autoWalk = v) };
+if (new URLSearchParams(location.search).has('fight')) setFight(true);
 requestAnimationFrame(frame);
