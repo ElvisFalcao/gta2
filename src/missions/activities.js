@@ -70,10 +70,13 @@ export class Activities {
     I.add('gym', { x: POI.gym.x, z: POI.gym.z, r: 3, label: '💪 Work out', onUse: () => this.gym() });
     I.add('beachCamps', { x: POI.beachCamps.x, z: POI.beachCamps.z, r: 3, label: '🏖 Chill on the beach', onUse: () => this.beach('Camps Bay') });
     I.add('beachClifton', { x: POI.beachClifton.x, z: POI.beachClifton.z, r: 3, label: '🏖 Chill on the beach', onUse: () => this.beach('Clifton') });
-    I.add('gatsby', { x: 47.6, z: -185, r: 2.6, label: '🥖 Gatsby — R45', onUse: () => this.eat('a massive Gatsby', 45, 60) });
-    I.add('fish', { x: 60, z: -400.6, r: 2.6, label: '🐟 Fish & chips — R55', onUse: () => this.eat('fish & chips at the Waterfront', 55, 70) });
-    I.add('shisa', { x: 640, z: 115.2, r: 2.6, label: '🍖 Braai plate — R60', onUse: () => this.eat('a shisa nyama braai plate', 60, 100) });
-    I.add('koek', { x: -165, z: -169, r: 2.4, label: '🍩 Koeksisters — R15', enabled: () => g.missions.isDone('m5'), onUse: () => this.eat("Aunty Rashieda's koeksisters", 15, 25) });
+    // food heals; junk food also piles on fat (fat: how much), the fruit cart burns a little
+    I.add('gatsby', { x: 47.6, z: -185, r: 2.6, label: '🥖 Gatsby — R45', onUse: () => this.eat('a massive Gatsby', 45, 60, 9) });
+    I.add('fish', { x: 60, z: -400.6, r: 2.6, label: '🐟 Fish & chips — R55', onUse: () => this.eat('fish & chips at the Waterfront', 55, 70, 6) });
+    I.add('shisa', { x: 640, z: 115.2, r: 2.6, label: '🍖 Braai plate — R60', onUse: () => this.eat('a shisa nyama braai plate', 60, 100, 6) });
+    I.add('koek', { x: -165, z: -169, r: 2.4, label: '🍩 Koeksisters — R15', enabled: () => g.missions.isDone('m5'), onUse: () => this.eat("Aunty Rashieda's koeksisters", 15, 25, 4) });
+    const fs = g.landmarks.fruitStall;
+    if (fs) I.add('fruit', { x: fs.x, z: fs.z + 1.3, r: 2.4, label: '🍎 Fruit & smoothie — R25', onUse: () => this.eat('a fruit cup and a smoothie', 25, 35, -2) });
     I.add('cableUp', { x: POI.cableLower.x + 6, z: POI.cableLower.z - 6, r: 2.6, label: '🚡 Cableway up — R80', onUse: () => this.rideCable(true) });
     I.add('cableDown', { x: POI.cableTop.x, z: POI.cableTop.z, r: 3, plateau: true, label: '🚡 Cableway down', onUse: () => this.rideCable(false) });
     I.add('viewpoint', { x: POI.viewpoint.x, z: POI.viewpoint.z + 1, r: 3.2, plateau: true, label: '🔭 Enjoy the view', enabled: () => !g.missions.active, onUse: () => this.enjoyView() });
@@ -137,6 +140,10 @@ export class Activities {
     if (g.state.flags.safehouse) add(POI.safehouse.x, POI.safehouse.z, '#ff6bd6', 'H');
     add(POI.hospital.x, POI.hospital.z, '#ffffff', '+');
     add(POI.policeStation.x, POI.policeStation.z, '#3b7bff', 'P');
+    const fs = g.landmarks.fruitStall, store = g.weapons && g.weapons.storeDoor, club = g.boxing && g.boxing.coachSpot;
+    if (fs) add(fs.x, fs.z, '#ff9f43', 'F');
+    if (store) add(store.x, store.z, '#c0c6cc', 'T');
+    if (club) add(club.x, club.z, '#ff5a4a', 'X');
     if (this.taxi && this.taxi.target) out.push({ x: this.taxi.target.x, z: this.taxi.target.z, color: '#ffd400', letter: this.taxi.stage === 'pickup' ? '!' : '★', edge: true, size: 8 });
   }
 
@@ -145,13 +152,31 @@ export class Activities {
   }
 
   // ---------------------------------------------------------------- simple activities
-  eat(what, price, heal) {
+  eat(what, price, heal, fat = 0) {
     const g = this.game;
     if (g.state.money < price) return g.hud.toast(`Not enough money. ${what} costs ${formatMoney(price)}.`, 'warn');
     g.addMoney(-price);
     g.player.health = Math.min(g.player.maxHealth, g.player.health + heal);
     g.audio.pickup();
-    g.hud.toast(`You enjoyed ${what}. Lekker! (+${heal} health)`, 'good');
+    const st = g.state.stats, before = st.fat || 0;
+    st.fat = clamp(before + fat, 0, 100);
+    const note = fat > 0 ? ` · Fat +${fat}%` : fat < 0 ? ' · Healthy!' : '';
+    g.hud.toast(`You enjoyed ${what}. Lekker! (+${heal} health${note})`, 'good');
+    this.bodyNotes(before, st.fat, 'fat');
+  }
+
+  /** A toast when Sizwe's body visibly changes (fat or muscle crossing 25 / 50 / 75 %). */
+  bodyNotes(before, after, kind) {
+    const lvl = (v) => Math.floor(v / 25);
+    const a = lvl(before), b = lvl(after);
+    if (kind === 'fat') this.lastFat = after;
+    if (a === b) return;
+    const g = this.game;
+    const FAT_UP = ["Sizwe's shirt is getting a little tight…", 'Eish, those gatsbys are showing. Running is harder now.', "Sizwe is properly heavy now: slow sprints, short breath. Hit the gym, bru!"];
+    const FAT_DOWN = ['Looking leaner!', 'The belly is shrinking. Lekker!', 'Almost back to fighting shape.'];
+    const MUS = ['Sizwe is getting toned.', 'Sizwe is looking buff! Punches hit harder.', 'Built like a Springbok prop. Jislaaik!', 'Maximum muscle. Nobody messes with Sizwe.'];
+    if (kind === 'fat') g.hud.toast(b > a ? FAT_UP[Math.min(2, b - 1)] : FAT_DOWN[Math.min(2, b)], b > a ? 'warn' : 'good', 4200);
+    else if (b > a) g.hud.toast('💪 ' + MUS[Math.min(3, b - 1)], 'good', 4200);
   }
 
   async beach(name) {
@@ -227,9 +252,13 @@ export class Activities {
     st.gymSets++;
     g.state.totals.gymSets++;
     const gain = Math.max(1, Math.round(5 * (1 - st.muscle / 130)));
+    const mBefore = st.muscle, fBefore = st.fat || 0;
     st.muscle = Math.min(100, st.muscle + gain);
     st.stamina = Math.min(100, st.stamina + 2);
-    g.hud.toast(`Set complete! Muscle +${gain}% · Stamina +2%`, 'good');
+    st.fat = Math.max(0, fBefore - 4);
+    g.hud.toast(`Set complete! Muscle +${gain}% · Stamina +2%${fBefore > 0 ? ' · Fat -4%' : ''}`, 'good');
+    this.bodyNotes(mBefore, st.muscle, 'muscle');
+    if (fBefore > 0) this.bodyNotes(fBefore, st.fat, 'fat');
     if (st.gymSets <= 3) g.addRespect(1);
   }
 
@@ -478,6 +507,18 @@ export class Activities {
   // ---------------------------------------------------------------- per-frame
   update(dt) {
     const g = this.game, p = g.player;
+    // body: metabolism burns a little fat every day; running it off gets a toast too
+    const st = g.state.stats;
+    if (st.bodyDay !== g.env.day) {
+      st.fat = Math.max(0, (st.fat || 0) - 3 * Math.max(1, g.env.day - (st.bodyDay || g.env.day)));
+      st.bodyDay = g.env.day;
+    }
+    this.bodyT = (this.bodyT || 0) - dt;
+    if (this.bodyT <= 0) {
+      this.bodyT = 1;
+      if (this.lastFat !== undefined) this.bodyNotes(this.lastFat, st.fat || 0, 'fat');
+      this.lastFat = st.fat || 0;
+    }
     this.updateRide(dt);
     this.updateTaxi(dt);
     // proteas

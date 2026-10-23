@@ -5,6 +5,7 @@ import { HumanRig, randomLook, LOOKS } from './humanModel.js';
 import { clamp, damp, turnTowards, headingTo, wrapAngle, dist, rand, chance, pick } from '../core/util.js';
 import { T } from '../world/grid.js';
 import { PLATEAU } from '../world/mapData.js';
+import { weaponMesh } from '../systems/weapons.js';
 
 let PID = 1;
 
@@ -64,7 +65,10 @@ export class Ped {
     this.invulnerable = !!o.invulnerable;
     this.noFight = !!o.noFight;
     this.timer = rand(0, 3);
+    this.aimW = 0;
+    this.shotT = 0;
     if (this.weapon === 'bat' && !this.isDog) this.giveBat();
+    if (this.weapon === 'pistol' && !this.isDog) this.giveGun();
     this.sync();
   }
 
@@ -73,10 +77,15 @@ export class Ped {
   }
 
   giveBat() {
-    const bat = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.07, 0.95, 6), new THREE.MeshLambertMaterial({ color: '#7a5230' }));
-    bat.position.set(0, -0.08, 0.32); // held in the right hand, pointing forward
-    bat.rotation.x = Math.PI / 2;
-    this.rig.b.armR.add(bat);
+    this.rig.b.armR.add(weaponMesh('bat'));
+  }
+
+  /** Armed officers (three stars and up): they keep their distance and shoot. */
+  giveGun() {
+    if (this.gunMesh) return;
+    this.weapon = 'pistol';
+    this.gunMesh = weaponMesh('pistol');
+    this.rig.b.armR.add(this.gunMesh);
   }
 
   groundAt(x, z) {
@@ -194,8 +203,11 @@ export class Ped {
     }
     this.y = this.groundAt(this.x, this.z);
     this.speedNow = Math.hypot(this.vx, this.vz);
+    const aim = this.weapon === 'pistol' && this.aiming && this.ai === 'fight' && !action;
+    this.aimW += ((aim ? 1 : 0) - this.aimW) * Math.min(1, dt * 6);
+    this.recoil = Math.max(0, (this.recoil || 0) - dt * 8);
     if (this.isDog) this.rig.animate(dt, { speed: this.speedNow, sit: mode === 'sit' });
-    else this.rig.animate(dt, { speed: this.speedNow, mode: action ? null : mode, action, actionT, guard: this.state === 'ok' && (this.ai === 'fight' || (this.kind === 'police' && this.ai === 'chase' && this.speedNow < 2)) && !!this.target });
+    else this.rig.animate(dt, { speed: this.speedNow, mode: action ? null : mode, action, actionT, aim: this.aimW, recoil: this.recoil, guard: this.weapon !== 'pistol' && this.state === 'ok' && (this.ai === 'fight' || (this.kind === 'police' && this.ai === 'chase' && this.speedNow < 2)) && !!this.target });
     this.sync();
   }
 
@@ -360,6 +372,7 @@ export class Ped {
       else this.face(tx, tz, dt);
       return;
     }
+    if (this.weapon === 'pistol') return this.doShoot(dt, t, d);
     const reach = this.weapon === 'bat' ? 1.7 : 1.35;
     if (this.attack) {
       this.vx = damp(this.vx, 0, 10, dt);
@@ -382,6 +395,37 @@ export class Ped {
           this.attackCD = rand(1.0, 1.7);
         } else this.attackCD = 0.4;
       }
+    }
+  }
+
+  /** Gunfight: close to 6-14 m with a clear line, stop, aim and fire every second or two. */
+  doShoot(dt, t, d) {
+    const g = this.game;
+    const clear = d < 26 && g.weapons.clearShot(this.x, this.z, t.x, t.z);
+    if (!clear || d > 14) {
+      this.aiming = false;
+      this.moveTo(t.x, t.z, this.runSpeed, dt, 6);
+      return;
+    }
+    if (d < 4.5) {
+      // too close: back off a step
+      const ax = (this.x - t.x) / (d || 1), az = (this.z - t.z) / (d || 1);
+      this.vx = damp(this.vx, ax * 3, 6, dt);
+      this.vz = damp(this.vz, az * 3, 6, dt);
+      this.tryMove(this.vx * dt, this.vz * dt);
+    } else {
+      this.vx = damp(this.vx, 0, 10, dt);
+      this.vz = damp(this.vz, 0, 10, dt);
+    }
+    this.face(t.x, t.z, dt);
+    this.aiming = true;
+    this.shotT -= dt;
+    if (this.shotT <= 0 && this.aimW > 0.8 && t.state !== 'down') {
+      this.shotT = rand(1.1, 1.9);
+      const moving = t.isPlayer ? t.speedNow > 6 || t.state === 'vehicle' : false;
+      const acc = clamp(0.62 - d * 0.02 - (moving ? 0.2 : 0), 0.15, 0.6);
+      g.weapons.npcShot(this, t, acc, 7 * this.dmgMul);
+      this.recoil = 1;
     }
   }
 
@@ -421,15 +465,16 @@ export class Ped {
     this.health -= dmg;
     this.hitT = 0.3;
     this.attack = null;
-    const push = kind === 'car' ? 10 : kind === 'heavy' ? 6 : kind === 'explosion' ? 12 : 3.2;
+    const push = kind === 'car' ? 10 : kind === 'heavy' ? 6 : kind === 'explosion' ? 12 : kind === 'launch' ? 5 : kind === 'bullet' ? 1.2 : 3.2;
     this.vx = dx * push;
     this.vz = dz * push;
     g.effects.hit(this.x, this.y + (this.isDog ? 0.5 : 1.3), this.z);
+    if (kind === 'bullet') g.effects.sparks(this.x, this.y + 1.2, this.z, 3, [1, 0.35, 0.3]);
     const byPlayer = attacker === g.player || attacker === 'player';
     if (byPlayer) {
       if ((this.kind === 'civ' || this.kind === 'dog') && !this.reported) {
         this.reported = true;
-        g.police.crime(kind === 'car' ? 'runOver' : 'assault', 1);
+        g.police.crime(kind === 'car' ? 'runOver' : kind === 'bullet' ? 'shooting' : 'assault', 1);
       }
       if (this.kind === 'police') g.police.crime('assaultCop', 1);
     }
@@ -437,13 +482,13 @@ export class Ped {
       this.knockOut(kind);
       return;
     }
-    if (kind === 'car' || kind === 'explosion' || (kind === 'heavy' && chance(0.45))) {
+    if (kind === 'car' || kind === 'explosion' || kind === 'launch' || (kind === 'heavy' && chance(0.45))) {
       if (this.state !== 'down') this.downE = 0;
       this.state = 'down';
       this.downT = kind === 'car' ? 2.8 : 2.2; // fall, lie dazed, get up
     }
     if (this.kind === 'civ' && byPlayer) {
-      if (this.tough && kind !== 'car' && !this.noFight) {
+      if (this.tough && kind !== 'car' && kind !== 'bullet' && !this.noFight) {
         this.prevAi = 'wander';
         this.ai = 'fight';
         this.target = g.player;
@@ -469,6 +514,7 @@ export class Ped {
       this.icon.remove();
       this.icon = null;
     }
+    if (this.weapon === 'pistol' && !this.mission) this.game.weapons.dropAmmo(this.x, this.z, 'pistol', 12);
     if (this.onDefeat) this.onDefeat(this);
     this.game.events.emit('pedDefeated', this);
   }

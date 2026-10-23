@@ -50,7 +50,9 @@ export function freshState() {
     version: 1,
     money: 60,
     respect: 0,
-    stats: { muscle: 0, stamina: 0, gymDay: -1, gymSets: 0, beachDay: -1, staminaXp: 0 },
+    stats: { muscle: 0, stamina: 0, fat: 0, gymDay: -1, gymSets: 0, beachDay: -1, staminaXp: 0, bodyDay: 1 },
+    weapons: { owned: { fists: true }, ammo: {}, current: 'fists' },
+    boxing: 0, // boxing lessons done at the Langa club (0..3)
     done: [],
     flags: {},
     proteas: [],

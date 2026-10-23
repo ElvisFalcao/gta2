@@ -98,8 +98,65 @@ MOVES.bat = {
   ],
 };
 
+// ---- boxing (taught by Coach Mzi in Langa)
+// lead hook: elbow up and out at shoulder height, forearm flat, the whole body turns through the punch
+MOVES.hook = {
+  dur: 0.44, hit: 0.17, reach: 1.0,
+  keys: [
+    { t: 0 },
+    { t: 0.07, p: { 'armL.sx': -1.0, 'armL.sy': -0.3, 'armL.sz': 0.55, 'armL.ex': -1.85, 'torso.ry': 0.4, 'hips.ry': -0.25, 'head.ry': 0.35 } },
+    { t: 0.17, ease: 'snap', p: { 'armL.sx': -0.05, 'armL.sy': -0.75, 'armL.sz': 1.45, 'armL.ex': -1.6, 'armL.wx': 0, 'torso.ry': -0.95, 'hips.ry': -1.0, 'torso.rx': 0.14, 'head.ry': 0.6, 'legL.ax': -0.3, 'legL.hz': 0.12, 'off.pz': 0.06 } },
+    { t: 0.25, p: { 'armL.sx': -0.1, 'armL.sy': -0.75, 'armL.sz': 1.4, 'armL.ex': -1.6, 'armL.wx': 0, 'torso.ry': -0.9, 'hips.ry': -0.95, 'torso.rx': 0.14, 'head.ry': 0.58, 'legL.ax': -0.3, 'off.pz': 0.06 } },
+    { t: 0.44, p: { 'off.pz': 0.06 } },
+  ],
+  keepOffset: true,
+};
+// lead hook to the ribs: dip the knees, lean in, arm angled down
+MOVES.body = {
+  dur: 0.4, hit: 0.15, reach: 0.95,
+  keys: [
+    { t: 0 },
+    { t: 0.06, p: { 'hips.py': 0.64, 'torso.rx': 0.3, 'armL.sx': -0.8, 'armL.sz': 0.4, 'armL.ex': -1.8, 'torso.ry': 0.3, 'legL.kx': 0.7, 'legR.kx': 0.6 } },
+    { t: 0.15, ease: 'snap', p: { 'hips.py': 0.6, 'torso.rx': 0.42, 'torso.rz': 0.12, 'armL.sx': -0.15, 'armL.sy': -0.75, 'armL.sz': 1.05, 'armL.ex': -1.5, 'armL.wx': 0, 'torso.ry': -0.8, 'hips.ry': -0.85, 'head.ry': 0.45, 'legL.kx': 0.8, 'legR.kx': 0.7, 'off.pz': 0.08 } },
+    { t: 0.22, p: { 'hips.py': 0.61, 'torso.rx': 0.4, 'torso.rz': 0.1, 'armL.sx': -0.2, 'armL.sy': -0.7, 'armL.sz': 1.0, 'armL.ex': -1.5, 'armL.wx': 0, 'torso.ry': -0.75, 'hips.ry': -0.8, 'head.ry': 0.42, 'legL.kx': 0.78, 'legR.kx': 0.68, 'off.pz': 0.08 } },
+    { t: 0.4, p: { 'off.pz': 0.08 } },
+  ],
+  keepOffset: true,
+};
+// rear uppercut: sink, then drive up off the back foot, fist rising under the chin
+MOVES.uppercut = {
+  dur: 0.58, hit: 0.24, reach: 0.9, heavy: true,
+  keys: [
+    { t: 0 },
+    { t: 0.1, p: { 'hips.py': 0.62, 'torso.rx': 0.28, 'torso.rz': -0.18, 'torso.ry': 0.2, 'armR.sx': -0.45, 'armR.sz': 0.3, 'armR.ex': -1.9, 'legL.kx': 0.75, 'legR.kx': 0.7, 'head.rx': 0.1 } },
+    { t: 0.24, ease: 'snap', p: { 'hips.py': 0.79, 'torso.rx': -0.12, 'torso.rz': 0.05, 'torso.ry': 0.75, 'hips.ry': 0.1, 'armR.sx': -1.25, 'armR.sz': 0.25, 'armR.ex': -1.4, 'armR.wx': 0.2, 'head.ry': -0.4, 'head.rx': -0.15, 'legR.ax': -0.7, 'legR.kx': 0.3, 'legL.kx': 0.2, 'off.pz': 0.14 } },
+    { t: 0.34, p: { 'hips.py': 0.78, 'torso.rx': -0.1, 'torso.ry': 0.7, 'hips.ry': 0.08, 'armR.sx': -1.35, 'armR.sz': 0.25, 'armR.ex': -1.4, 'armR.wx': 0.2, 'head.ry': -0.38, 'head.rx': -0.12, 'legR.ax': -0.6, 'legR.kx': 0.3, 'legL.kx': 0.25, 'off.pz': 0.14 } },
+    { t: 0.58, p: { 'off.pz': 0.14 } },
+  ],
+  keepOffset: true,
+};
+// one-handed overhead tool swing (wheel spanner)
+MOVES.swing = {
+  dur: 0.46, hit: 0.22, reach: 1.3,
+  keys: [
+    { t: 0 },
+    { t: 0.14, p: { 'armR.sx': -2.7, 'armR.sz': 0.2, 'armR.ex': -1.4, 'torso.ry': -0.25, 'torso.rx': -0.1, 'hips.ry': -0.3 } },
+    { t: 0.22, ease: 'snap', p: { 'armR.sx': -0.95, 'armR.sz': 0.25, 'armR.ex': -0.25, 'torso.ry': 0.5, 'torso.rx': 0.32, 'hips.ry': 0.05, 'legL.kx': 0.6, 'head.rx': 0.15 } },
+    { t: 0.46 },
+  ],
+};
+
 // Falling over and getting up, cut from the knockdown so all three line up exactly.
 const KD = MOVES.knockdown.keys;
 MOVES.fall = { dur: 0.7, keys: KD.filter((k) => k.t <= 0.7) };
 MOVES.getup = { dur: 1.2, keys: KD.filter((k) => k.t >= 1.8).map((k) => ({ ...k, t: k.t - 1.8 })) };
 export const LYING_T = 1.8; // time in the knockdown where the body lies still
+
+/** Arms up holding a gun: right arm straight out, left hand supporting; recoil (0..1) kicks the arms up. */
+export function aimPose(recoil = 0) {
+  return {
+    'armR.sx': -1.52 - recoil * 0.32, 'armR.sy': 0, 'armR.sz': 0.12, 'armR.ex': -0.08, 'armR.ez': 0, 'armR.wx': -recoil * 0.3,
+    'armL.sx': -1.36 - recoil * 0.25, 'armL.sy': 0, 'armL.sz': -0.58, 'armL.ex': -0.78, 'armL.ez': 0, 'armL.wx': 0,
+    'torso.ry': 0.16, 'torso.rx': 0.04 - recoil * 0.06, 'head.ry': -0.08,
+  };
+}

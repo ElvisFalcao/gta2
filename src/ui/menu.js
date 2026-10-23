@@ -6,6 +6,15 @@ import { formatMoney, formatClock, clamp } from '../core/util.js';
 
 const $ = (s) => document.querySelector(s);
 
+/** A word for Sizwe's shape, from muscle and fat (both 0..100). */
+function bodyType(m, f) {
+  if (f >= 60) return m >= 50 ? 'Big & strong' : 'Heavy';
+  if (f >= 30) return m >= 50 ? 'Stocky' : 'Chubby';
+  if (m >= 70) return 'Buff';
+  if (m >= 35) return 'Athletic';
+  return 'Skinny';
+}
+
 export class Menu {
   constructor(game) {
     this.game = game;
@@ -118,6 +127,7 @@ export class Menu {
       this.close();
       this.openMap();
     }
+    if (this.tab === 'quit' && input.pressed('confirm')) return this.game.quitToTitle();
     const scroll = (input.pad ? -input.pad.ly - input.pad.ry : 0) + (input.held('navDown') ? 1 : 0) - (input.held('navUp') ? 1 : 0);
     if (scroll) this.body.scrollTop += scroll * 600 * dt;
   }
@@ -143,7 +153,10 @@ export class Menu {
       })
       .join('')}</ul>
       <h3>Free roam</h3>
-      <p>• <b>Gym</b> — Sea Point outdoor gym: build muscle (hit harder) and earn respect.<br>
+      <p>• <b>Gym</b> — Sea Point outdoor gym: build muscle (bigger arms, harder punches, more health), burn fat and earn respect.<br>
+      • <b>Diet</b> — gatsbys, fish &amp; chips and braai heal you but pile on fat (slower, shorter sprints). The fruit cart by the gym doesn't.<br>
+      • <b>Boxing</b> — Langa Boxing Club: Coach Mzi teaches hooks, uppercuts and body shots.<br>
+      • <b>Hardware store</b> — Woodstock: tools and guns.<br>
       • <b>Beaches</b> — Camps Bay &amp; Clifton: chill to heal and pass time.<br>
       • <b>Food</b> — Gatsby on Long St, fish &amp; chips at the Waterfront, shisa nyama in Langa.<br>
       • <b>Cableway</b> — ride up Table Mountain for the view (and maybe a protea).<br>
@@ -158,8 +171,11 @@ export class Menu {
     el.innerHTML = `<h2>Sizwe</h2><div class="stat-grid">
       ${stat('Money', formatMoney(s.money))}
       ${stat('Respect', s.respect)}
+      ${stat('Build', bodyType(s.stats.muscle, s.stats.fat || 0))}
       ${stat('Muscle', Math.round(s.stats.muscle) + '%', s.stats.muscle / 100)}
+      ${stat('Fat', Math.round(s.stats.fat || 0) + '%', (s.stats.fat || 0) / 100)}
       ${stat('Stamina', Math.round(s.stats.stamina) + '%', s.stats.stamina / 100)}
+      ${stat('Fighting style', g.player.styleName)}
       ${stat('Story missions', `${s.done.filter((d) => d.startsWith('m')).length}/${g.missions.story.length}`)}
       ${stat('Side jobs done', s.totals.sideQuests)}
       ${stat('Taxi fares', s.totals.fares)}
@@ -169,6 +185,16 @@ export class Menu {
       ${stat('Wasted', s.totals.wasted)}
       ${stat('Busted', s.totals.busted)}
     </div>`;
+  }
+
+  tab_quit(el) {
+    const g = this.game, onJob = !!g.missions.active;
+    el.innerHTML = `<h2>Back to the title screen?</h2>
+      <p>${onJob ? 'You are in the middle of a mission: it will be <b>cancelled</b>. Everything else is saved first.' : 'Your progress is saved first, so you can pick up right here with <b>Continue</b>.'}</p>
+      <div class="btn-row"><button class="btn primary" id="quit-go">Save &amp; return to title</button><button class="btn" id="quit-stay">Keep playing</button></div>
+      <p class="muted">${g.input.usingGamepad ? 'A to confirm · B to keep playing' : ''}</p>`;
+    el.querySelector('#quit-go').addEventListener('click', () => g.quitToTitle());
+    el.querySelector('#quit-stay').addEventListener('click', () => this.close());
   }
 
   tab_notebook(el) {
@@ -189,8 +215,9 @@ export class Menu {
       <div class="setting"><span>Radio / music</span><input id="set-music" type="range" min="0" max="1" step="0.05"></div>
       <div class="setting"><span>Camera sensitivity</span><input id="set-sens" type="range" min="0.4" max="2" step="0.1"></div>
       <div class="setting"><span>Street voices<br><span class="muted">People talking around you (speech bubbles always show unless Off)</span></span><select id="set-voices"><option value="on">Voices + bubbles</option><option value="subs">Bubbles only</option><option value="off">Off</option></select></div>
+      <div class="setting"><span>Aim assist<br><span class="muted">How hard guns lock onto targets</span></span><select id="set-aim"><option value="strong">Strong</option><option value="light">Light</option><option value="off">Off</option></select></div>
       <div class="setting"><span>Touch controls</span><select id="set-touch"><option value="auto">Auto</option><option value="on">Always on</option><option value="off">Off</option></select></div>
-      <div class="btn-row"><button class="btn primary" id="set-save">Save game</button><button class="btn danger" id="set-reset">Delete save &amp; restart</button></div>
+      <div class="btn-row"><button class="btn primary" id="set-save">Save game</button><button class="btn" id="set-title">Return to title screen</button><button class="btn danger" id="set-reset">Delete save &amp; restart</button></div>
       <p class="muted" id="set-msg"></p>`;
     const q = el.querySelector('#set-q');
     q.value = st.quality;
@@ -205,6 +232,12 @@ export class Menu {
     mus.value = st.music;
     sens.value = st.sens;
     tch.value = st.touch;
+    const aim = el.querySelector('#set-aim');
+    aim.value = st.aimAssist || 'strong';
+    aim.addEventListener('change', () => {
+      st.aimAssist = aim.value;
+      g.saveSettings();
+    });
     const vo = el.querySelector('#set-voices');
     vo.value = st.voices || 'on';
     vo.addEventListener('change', () => {
@@ -222,6 +255,7 @@ export class Menu {
     };
     [sfx, mus, sens].forEach((i) => i.addEventListener('input', apply));
     tch.addEventListener('change', apply);
+    el.querySelector('#set-title').addEventListener('click', () => this.show('quit'));
     el.querySelector('#set-save').addEventListener('click', () => {
       const ok = g.save();
       el.querySelector('#set-msg').textContent = ok ? 'Saved.' : 'Could not save (storage blocked?).';
@@ -243,7 +277,7 @@ export class Menu {
       <div class="cheat-input"><input id="cheat" placeholder="e.g. LEKKER" maxlength="20" autocomplete="off" autocapitalize="characters"><button class="btn primary" id="cheat-go">Go</button></div>
       <p id="cheat-msg" class="muted"></p>
       <h3>Known codes</h3>
-      <p><b>LEKKER</b> +50 respect · <b>MOOLAH</b> +R5 000 · <b>EISH</b> clear wanted level · <b>BAKKIE</b> spawn a bakkie · <b>TAXI</b> spawn a minibus taxi · <b>VROOM</b> spawn a sports car · <b>SUPERSIZWE</b> god mode · <b>NOPOLICE</b> police ignore you · <b>DAY</b> / <b>NIGHT</b> change time · <b>GYMRAT</b> max muscle · <b>SKIPMISSION</b> pass current mission</p>`;
+      <p><b>LEKKER</b> +50 respect · <b>MOOLAH</b> +R5 000 · <b>EISH</b> clear wanted level · <b>BAKKIE</b> spawn a bakkie · <b>TAXI</b> spawn a minibus taxi · <b>VROOM</b> spawn a sports car · <b>SUPERSIZWE</b> god mode · <b>NOPOLICE</b> police ignore you · <b>DAY</b> / <b>NIGHT</b> change time · <b>GYMRAT</b> max muscle · <b>GATSBY</b> max fat · <b>ARMED</b> all weapons · <b>BOXER</b> all boxing moves · <b>SKIPMISSION</b> pass current mission</p>`;
     const inp = el.querySelector('#cheat');
     const go = () => {
       const msg = this.game.cheat(inp.value.trim().toUpperCase());
@@ -264,7 +298,8 @@ export class Menu {
       <tr><td>Left side drag</td><td>Walk · steer when driving</td></tr>
       <tr><td>GAS · BRAKE</td><td>Drive · brake (hold BRAKE to reverse); H.BRAKE for handbrake turns</td></tr>
       <tr><td>Right side drag</td><td>Look around</td></tr>
-      <tr><td>PUNCH</td><td>Tap repeatedly for a 3-hit combo (auto-aims at enemies)</td></tr>
+      <tr><td>PUNCH / SHOOT</td><td>Tap repeatedly for a combo (auto-aims at enemies); with a gun, tap to shoot (hold for the SMG). Aim assist locks onto the nearest threat</td></tr>
+      <tr><td>Weapon button</td><td>Above RUN: switch between fists, tools and guns</td></tr>
       <tr><td>RUN</td><td>Hold to sprint (uses stamina)</td></tr>
       <tr><td>CAR / EXIT</td><td>Get in or out of the nearest vehicle</td></tr>
       <tr><td>ACTION</td><td>Talk, start missions, eat, work out, chill…</td></tr>
@@ -274,7 +309,8 @@ export class Menu {
       <tr><td>Mouse drag · Q / Z</td><td>Camera</td></tr>
       <tr><td>Shift</td><td>Sprint</td></tr>
       <tr><td>Space</td><td>Jump · handbrake</td></tr>
-      <tr><td>J / K / click</td><td>Punch</td></tr>
+      <tr><td>J / K / click</td><td>Punch · swing · shoot (hold for the SMG)</td></tr>
+      <tr><td>Tab · 1–6</td><td>Next weapon · pick a weapon</td></tr>
       <tr><td>F / Enter</td><td>Enter / exit vehicle</td></tr>
       <tr><td>E</td><td>Action / talk / advance dialogue</td></tr>
       <tr><td>H · R · T</td><td>Horn · radio · taxi job</td></tr>
@@ -283,12 +319,12 @@ export class Menu {
       <tr><td>Left stick · right stick</td><td>Move / steer · camera (click RS to snap behind)</td></tr>
       <tr><td>RT · LT</td><td>Gas · brake / reverse (on foot: RT punches too)</td></tr>
       <tr><td>A</td><td>Hold to sprint · advance dialogue · confirm</td></tr>
-      <tr><td>B</td><td>Punch (3-hit combo) · back</td></tr>
+      <tr><td>B</td><td>Punch (combo) · swing · shoot · back</td></tr>
       <tr><td>X</td><td>Jump</td></tr>
       <tr><td>Y</td><td>Enter / exit vehicle</td></tr>
       <tr><td>LB · RB</td><td>Talk / action · handbrake (switch tabs in this menu)</td></tr>
       <tr><td>Click LS</td><td>Horn</td></tr>
-      <tr><td>D-pad ← · ↓ · →</td><td>Radio · taxi job · action (↑ ↓ pick dialogue choices)</td></tr>
+      <tr><td>D-pad ← · ↓ · →</td><td>Next weapon (radio in a car) · taxi job · action (↑ ↓ pick dialogue choices)</td></tr>
       <tr><td>View · Menu</td><td>Map · pause</td></tr></table>
       <h3>Tips</h3><p>Respect unlocks new story missions — earn it from missions, side jobs, the gym, taxi fares and proteas. If the police are after you, break line of sight and lie low until the stars fade. Lekker!</p>`;
   }
@@ -306,7 +342,7 @@ export class Menu {
     const legend = this.mapEl.querySelector('.map-legend');
     legend.innerHTML = [
       ['#ffd400', 'S', 'Story mission'], ['#4fc3ff', '?', 'Side job'], ['#7be37b', 'G', 'Gym / beach / cableway'],
-      ['#ff9f43', 'F', 'Food'], ['#ff6bd6', 'H', 'Safehouse'], ['#c85aff', 'W', 'Waypoint'], ['#ff4040', '!', 'Target'],
+      ['#ff9f43', 'F', 'Food'], ['#c0c6cc', 'T', 'Tools & guns'], ['#ff5a4a', 'X', 'Boxing club'], ['#ff6bd6', 'H', 'Safehouse'], ['#c85aff', 'W', 'Waypoint'], ['#ff4040', '!', 'Target'],
     ].map(([c, l, t]) => `<div><i style="background:${c}">${l}</i>${t}</div>`).join('');
     this.resizeMap();
     this.drawMap();

@@ -180,7 +180,10 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .tb.pill { flex-direction: row; gap: 6px; height: var(--b2); width: auto; max-width: 168px; padding: 0 14px 0 10px; border-radius: 999px; border-color: rgba(255, 207, 51, 0.85); font-size: 12px; font-weight: 800; letter-spacing: 0.3px; white-space: nowrap; }
 .tb.pill svg { width: 18px; height: 18px; flex: none; }
 .tb.pill span { overflow: hidden; text-overflow: ellipsis; }
-/* on foot: PUNCH in the corner, JUMP to its left, RUN above it, CAR above JUMP, ACTION further left */
+/* on foot: PUNCH in the corner, JUMP to its left, RUN above it, WEAPON above RUN, CAR above JUMP, ACTION further left */
+.b-weapon { right: calc((var(--b1) - var(--b2)) / 2); bottom: calc(var(--b1) + var(--b2) + var(--g) * 2); }
+.tb.b-weapon svg { width: 52%; height: 52%; }
+.tb.dim { opacity: 0.55; }
 .b-attack { right: 0; bottom: 0; border-color: rgba(255, 130, 110, 0.7); }
 .b-jump { right: calc(var(--b1) + var(--g)); bottom: 0; }
 .b-sprint { right: calc((var(--b1) - var(--b2)) / 2); bottom: calc(var(--b1) + var(--g)); }
@@ -525,3 +528,29 @@ body { background: #1d2f3f; }
 }
 /* with no save to continue, New Game is the main button */
 #title-btns #btn-continue.hidden + #btn-new { background: var(--gold); }
+
+/* ---------------------------------------------------------------- weapons */
+#weapon { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 3px 10px 3px 6px; border-radius: 999px;
+  background: var(--cream); color: var(--inkc); border: 2.5px solid var(--inkc); box-shadow: 0 3px 0 var(--inkc); font-family: var(--display); font-size: 20px; line-height: 1; }
+#weapon .w-ico svg { width: 26px; height: 26px; display: block; fill: none; stroke: var(--inkc); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+#weapon.empty { background: #ffd9d2; color: #a3261a; }
+#reticle { position: absolute; left: 0; top: 0; width: 46px; height: 46px; border-radius: 50%; pointer-events: none;
+  border: 3px solid #fff; box-shadow: 0 0 0 2.5px var(--inkc), inset 0 0 0 2.5px var(--inkc); will-change: transform; }
+#reticle::before, #reticle::after { content: ''; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--inkc); }
+#reticle::after { display: none; }
+#reticle.hostile { border-color: var(--red); }
+#reticle.hostile::before { background: var(--red); }
+@media (max-height: 520px), (max-width: 760px) {
+  #weapon { font-size: 16px; padding: 2px 8px 2px 4px; }
+  #weapon .w-ico svg { width: 20px; height: 20px; }
+  #reticle { width: 36px; height: 36px; }
+}
+
+/* boxing pad work */
+.mg .pad-zone { position: relative; height: 150px; margin: 4px 0 8px; }
+.mg .pad-target { position: absolute; left: 50%; top: 50%; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; background: #e2483d; border: 3px solid var(--inkc); box-shadow: inset 0 -6px 0 rgba(0,0,0,0.18), 0 4px 0 var(--inkc); }
+.mg .pad-ring { position: absolute; left: 50%; top: 50%; width: 70px; height: 70px; border-radius: 50%; border: 4px solid var(--inkc); box-shadow: 0 0 0 3px var(--gold); transform: translate(-50%, -50%) scale(2.4); }
+.mg .pad-word { position: absolute; left: 0; right: 0; top: 4px; font-family: var(--cartoon); font-size: 30px; color: var(--inkc); }
+.mg .pad-word.good { color: #2f8f2c; }
+.mg .pad-word.miss { color: #a3261a; }
+@media (max-height: 500px) { .mg .pad-zone { height: 110px; } .mg .pad-word { font-size: 24px; } }

@@ -62,7 +62,8 @@ Add `--cdn` to load Three.js from jsDelivr instead (~300 KB file).
 | Look around | Drag on the **right** half | Drag with the mouse · **Q / Z** |
 | Sprint | Hold **RUN** | **Shift** |
 | Jump / handbrake | **JUMP** / **H.BRAKE** | **Space** |
-| Punch (3-hit combo) | **PUNCH** | **J**, **K** or click |
+| Punch (combo) · swing · shoot | **PUNCH** (becomes **SWING** / **SHOOT**) | **J**, **K** or click (hold for the SMG) |
+| Switch weapon | Weapon button above **RUN** | **Tab** · **1–6** |
 | Get in / out of a car | **CAR / EXIT** | **F** or **Enter** |
 | Talk / action | **ACTION** (appears when available) | **E** |
 | Horn · radio · taxi job | **HORN · RADIO · TAXI JOB** | **H · R · T** |
@@ -74,10 +75,10 @@ Add `--cdn` to load Three.js from jsDelivr instead (~300 KB file).
 |---|---|
 | Walk / steer · camera | **Left stick** · **right stick** (click **RS** to snap the camera behind you) |
 | Gas · brake / reverse | **RT** · **LT** |
-| Sprint · punch · jump | Hold **A** · **B** (or **RT** on foot) · **X** |
+| Sprint · punch / shoot · jump | Hold **A** · **B** (or **RT** on foot) · **X** |
 | Get in / out of a car | **Y** |
 | Talk / action · handbrake | **LB** · **RB** |
-| Horn · radio · taxi job | Click **LS** · **D-pad ←** · **D-pad ↓** |
+| Horn · radio (in a car) / next weapon (on foot) · taxi job | Click **LS** · **D-pad ←** · **D-pad ↓** |
 | Dialogue choices | **D-pad ↑ ↓** then **A** |
 | Map · pause | **View** · **Menu** (B goes back; LB / RB switch menu tabs; on the map the left stick pans, triggers zoom, **A** sets a waypoint) |
 
@@ -116,8 +117,26 @@ Grand Parade, the Castle of Good Hope, the colourful Bo-Kaap, Woodstock's murals
 **Side jobs** — strangers with a blue **?** ask for help: chase a phone snatcher, deliver koeksisters before they
 go cold, find a lost dog, give someone a lift, or chase off skollies.
 
-**Free-roam activities** — outdoor gym mini-game (muscle makes you hit harder and Sizwe bulks up), beaches
-(heal + pass time), food stalls, cableway + viewpoint, minibus taxi fares, safehouse save & rest, 15 hidden proteas.
+**Free-roam activities** — outdoor gym mini-game, beaches (heal + pass time), food stalls, cableway + viewpoint,
+minibus taxi fares, safehouse save & rest, 15 hidden proteas.
+
+**Body** — what Sizwe does shows on him. Gym sets build muscle: a broader chest, bigger arms and shoulders, harder
+punches and up to +30 health. Gatsbys, fish & chips, braai plates and koeksisters heal but pile on fat: a round belly,
+wider waist, slower sprints, shorter breath and lower jumps. Sprinting, swimming, the gym and a little every day burn it
+off; the fruit & smoothie cart by the gym heals without the fat. *Pause → Stats* shows his build.
+
+**Boxing** — Coach Mzi at the Langa Boxing Club teaches three paid lessons (pad work: hit the pad as the ring closes).
+Each adds a move to the combo: jab, cross, **hook** → + **uppercut** (knocks them down) → + **body shot** for a
+five-punch combo. Trained fists also hit harder. A running attack is always the roundhouse kick.
+
+**Tools & guns** — a cricket bat (Langa, by the shisa nyama) and a wheel spanner (the Woodstock yard) lie around;
+Sipho's Hardware in Woodstock sells them plus a pistol, a pump shotgun and an SMG (the bigger guns need respect) and
+ammo. Aim assist locks onto the nearest threat (red reticle for hostiles; *Settings → Aim assist*: strong, light or off).
+Gunfire empties the street and brings the police if a cop or a passer-by sees it; at three stars officers draw pistols and shoot back, and drop ammo
+when they go down. Get busted and they keep your guns (tools stay).
+
+*Pause → Title screen* (or *Settings → Return to title screen*) saves and goes back to the title, where
+**Continue** picks up where you left off.
 
 **Street voices** — people talk: they greet you, chat about load shedding and the Bokke, call out taxi routes at the
 rank, sell Gatsbys, shout when you bump them, nearly run them over, hoot at them, punch them or take their car, and gang
@@ -132,7 +151,8 @@ you're **BUSTED**. Break line of sight and lie low until the stars fade. Lose al
 
 **Cheats** (Pause → Cheats): `LEKKER` +50 respect · `MOOLAH` +R5 000 · `EISH` clear wanted level ·
 `BAKKIE` / `TAXI` / `VROOM` spawn a vehicle · `SUPERSIZWE` god mode · `NOPOLICE` · `DAY` / `NIGHT` ·
-`GYMRAT` max muscle · `SKIPMISSION` pass the current mission.
+`GYMRAT` max muscle · `GATSBY` max fat · `ARMED` every tool and gun · `BOXER` all boxing moves ·
+`SKIPMISSION` pass the current mission.
 
 Progress saves automatically (and at the safehouse) in your browser's local storage.
 Graphics quality (Low / Medium / High) is in *Pause → Settings*; phones default to Medium.
@@ -228,6 +248,7 @@ node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots basi
 node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots story   # plays all 10 missions automatically
 node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots gamepad # drives the game with a fake Xbox pad
 node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots voice   # street voices, bubbles, recorded clips
+node tools/smoke.mjs "http://localhost:8080/index.html?quality=low" ./shots features # body, weapons, aim assist, armed cops, boxing, title screen
 ```
 
 ---

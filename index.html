@@ -40,10 +40,12 @@
         <div id="respect"><span class="lbl">Respect</span><span id="respect-val">0</span></div>
         <div class="bar resp"><i></i></div>
         <div id="wanted"><b>★</b><b>★</b><b>★</b></div>
+        <div id="weapon" class="hidden"><span class="w-ico"></span><span class="w-ammo"></span></div>
         <div id="timer" class="hidden"></div>
         <div id="counter" class="hidden"></div>
       </div>
       <div id="objective" class="hidden"></div>
+      <div id="reticle" class="hidden"></div>
       <div id="bigarea" class="hidden"></div>
       <div id="vehname" class="hidden"></div>
       <div id="prompt" class="hidden"></div>
@@ -60,7 +62,8 @@
       <div id="joy-zone"></div>
       <div id="joy-base"><div id="joy-knob"></div></div>
       <div id="btns">
-        <button data-btn="attack" class="tb lg b-attack foot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8.5a1.5 1.5 0 0 1 3 0V8a1.5 1.5 0 0 1 3 0v.5a1.5 1.5 0 0 1 3 0V9a1.5 1.5 0 0 1 3 0v4.5a6.5 6.5 0 0 1-6.5 6.5h-.8A5.7 5.7 0 0 1 6 14.3V13a2 2 0 0 1 2-2h3"/></svg><small>PUNCH</small></button>
+        <button data-btn="attack" class="tb lg b-attack foot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11V8.5a1.5 1.5 0 0 1 3 0V8a1.5 1.5 0 0 1 3 0v.5a1.5 1.5 0 0 1 3 0V9a1.5 1.5 0 0 1 3 0v4.5a6.5 6.5 0 0 1-6.5 6.5h-.8A5.7 5.7 0 0 1 6 14.3V13a2 2 0 0 1 2-2h3"/></svg><small class="atk-lbl">PUNCH</small></button>
+        <button data-btn="weapon" class="tb sm b-weapon foot"><span class="w-ico"></span><small class="w-lbl">FISTS</small></button>
         <button data-btn="jump" class="tb sm b-jump foot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg><small>JUMP</small></button>
         <button data-btn="sprint" class="tb sm b-sprint foot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6l6 6-6 6M13 6l6 6-6 6"/></svg><small>RUN</small></button>
         <button data-btn="gas" class="tb lg pedal b-gas car"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg><small>GAS</small></button>
@@ -103,6 +106,7 @@
           <button data-tab="settings">Settings</button>
           <button data-tab="cheats">Cheats</button>
           <button data-tab="help">Controls</button>
+          <button data-tab="quit">Title screen</button>
         </nav>
         <section class="menu-body"></section>
       </div>

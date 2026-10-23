@@ -328,5 +328,115 @@ whole sequence at a glance: jab, cross, kick, the knockdown and the get-up.
   - **voice:** a stubbed `speechSynthesis` checks ambient, every trigger, bubbles, the recorded-clip path
     (serve a generated WAV for one line) and the "off" setting
   - **mobile:** a phone viewport with real touch events on the pedals
+  - **features:** body shape and speed vs fat, store, pickups, aim assist modes, pistol / SMG, bat, armed cops,
+    confiscation, the five-punch boxing combo, a pad-work lesson passed by an in-page tapper, return to title
 - Screenshot and filmstrip tools exist for anything visual or motion-related; look at the images, because
   numbers alone missed half the problems.
+
+---
+
+## 9. Body: muscle and fat that show and matter
+
+Two stats, 0–100, saved with the game: `muscle` (from the gym) and `fat` (from food).
+
+**Gains and losses**
+- Gym set (tap mini-game, max 4 a day): muscle `+max(1, round(5 × (1 − muscle/130)))`, fat −4.
+- Junk food heals and adds fat: gatsby +9, fish & chips +6, braai plate +6, koeksisters +4.
+  A fruit & smoothie cart heals 35 and takes fat −2.
+- Burning: sprinting −0.05/s, swimming −0.04/s, −3 every new in-game day.
+- A toast fires when either stat crosses 25 / 50 / 75 (e.g. "Eish, those gatsbys are showing").
+
+**Effects** (`f = fat/100`, `m = muscle/100`)
+- Speeds × (1 − 0.25f) sprinting, × (1 − 0.1f) walking/jogging, × (1 − 0.2f) swimming.
+- Acceleration × (1 − 0.35f), jump velocity × (1 − 0.22f), sprint/swim stamina drain × (1 + 0.9f).
+- Max health 100 + 30m; melee damage × (1 + 0.9m) (unchanged from before).
+
+**Showing it on the body** (skinned character with rigid weights): scaling a joint that has children
+shears them when they rotate (a scaled shoulder stretches the forearm when the elbow bends). Instead, add
+**leaf "shape" bones** that carry only flesh and have no children: chest (under torso), belly (under torso,
+slightly forward), pelvis (under hips), bicep L/R (under shoulders), forearm L/R (under elbows), thigh L/R
+(under hips). Re-parent the matching mesh parts to them. Leaves can scale freely:
+- chest `(1 + 0.34m + 0.28f, 1, 1 + 0.22m + 0.32f)`, biceps `1 + 0.65m + 0.25f`, forearms `1 + 0.35m + 0.16f`,
+  thighs `1 + 0.25m + 0.38f`, pelvis `(1 + 0.32f, 1, 1 + 0.36f)`.
+- The belly is an extra sphere hidden inside the chest at scale 0.45 that grows to 1.45 with fat.
+- Shoulders and hips also move outward a little (position, not scale): `× (1 + 0.2m + 0.13f)` and `× (1 + 0.3f)`.
+
+## 10. Weapons: tools and guns with aim assist
+
+**Inventory** (saved): owned set, ammo per gun, current weapon. Order: fists, cricket bat, spanner, pistol,
+SMG, shotgun. Switch with Tab / 1–6, the pad's D-pad left on foot (it's the radio in a car), or a touch button
+that shows the current icon and ammo. The attack button relabels PUNCH / SWING / SHOOT.
+
+| | Damage | Rate (s) | Range (m) | Accuracy on a locked target | Spread (rad) | Notes |
+|---|---|---|---|---|---|---|
+| Cricket bat | 24 | swing 0.6 (hit at 0.3) | 1.95 | — | — | heavy: may knock down |
+| Wheel spanner | 17 | swing 0.46 (hit at 0.22) | 1.7 | — | — | |
+| Pistol | 24 | 0.3 | 34 | 92 % | 0.035 | 36 rounds per box |
+| SMG | 10 | 0.085, hold to fire | 26 | 72 % | 0.07 | 90 rounds |
+| Shotgun | 13 × 6 pellets | 0.95 | 16 | 85 % (75 % per pellet) | 0.12 | knocks down within 6 m |
+
+Damage falls off with distance: `× clamp(1.25 − d/range, 0.45, 1)`.
+
+**Getting them:** tools lie at two fixed spots and respawn (2 min) only if you don't own one. A store sells
+everything and ammo; the bigger guns need respect (pistol 15, shotgun 45, SMG 80).
+
+**Aim assist** (setting: strong / light / off):
+1. The wanted direction is the stick direction while moving, otherwise the camera's forward.
+2. Candidates: living, non-invulnerable people within the weapon range, inside a cone of ±75° (strong) or
+   ±29° (light), with a clear line of sight (grid raycast at chest height).
+3. Score `distance × 0.5 + angle × 9 + (hostile ? 0 : 7)`, minus 4 for the current target. The current
+   target also gets a 1.4× wider cone, so the lock is sticky.
+4. Lowest score wins. The character turns to face the lock (and can strafe at walking pace).
+   A reticle sits on it, red if hostile.
+
+**Shooting** is hitscan:
+- A locked shot hits the target with the weapon's accuracy.
+- A miss, or any shot with no lock, travels along the barrel heading ± spread. It stops at the first wall,
+  person (within 0.42 m of the ray) or car.
+- Feedback per shot: muzzle flash, a tracer for 80 ms, a synthesised crack, a small camera shake and rumble.
+
+**Consequences:**
+- Gunfire makes civilians within 32 m flee.
+- Shooting adds a gunfire crime (+1 heat, at most every 4 s) if police are within 45 m, a civilian is within
+  30 m to witness it, or you already have stars.
+- Hitting a civilian is a shooting crime (1.3 heat).
+- Busted: guns are confiscated, tools are kept.
+
+## 11. Armed police at three stars
+
+- At three stars, new officers spawn with pistols and the ones already chasing draw them.
+- Armed officers close to within 6–14 m with a clear line, back off if you're closer than 4.5 m, and stop and aim.
+  They fire every 1.1–1.9 s with hit chance `clamp(0.62 − 0.02d − (0.2 if you're sprinting or driving), 0.15, 0.6)`
+  for 7 damage.
+- Bullets push lightly and never knock down.
+- A knocked-out armed officer drops a 12-round pistol ammo pickup that lasts 30 s.
+- When the heat is lost, officers holster and go back to walking.
+
+## 12. Boxing lessons (fighting styles)
+
+A coach teaches three paid lessons. Each one adds a move to the tap combo:
+
+| Level | Combo (tap attack in rhythm) | Lesson |
+|---|---|---|
+| 0, street | jab, cross, roundhouse kick | — |
+| 1 | jab, cross, hook | R100 |
+| 2 | jab, cross, hook, uppercut | R200, respect 30 |
+| 3 | jab, cross, body shot, hook, uppercut | R300, respect 60 |
+
+- New moves:
+  - hook 0.44 s (hit at 0.17), 15 damage
+  - body shot 0.40 s (hit at 0.15), 12 damage
+  - uppercut 0.58 s (hit at 0.24), 22 damage, always knocks down
+- Boxers deal × (1 + 0.1 × level) fist damage and get a longer chaining window (0.6 s instead of 0.45 s).
+- An attack while running faster than 6.5 m/s is always the roundhouse kick.
+
+**The lesson (pad work):**
+- 10 calls cycling through the lesson's punches. For each call a ring shrinks onto the pad over 0.95 s.
+- A tap within ±0.13 s of the ring landing is GOOD, within ±0.06 s is PERFECT; anything else is early or late.
+- The character throws the called punch on every tap. 7 good hits pass the lesson; failing refunds it.
+
+## 13. Back to the title screen
+
+The pause menu has a "Title screen" tab (and a button in Settings). It saves, then reloads the page, so the
+title screen comes back with **Continue**. A mission in progress is dropped, because missions only save when
+they're passed. The pad confirms with A on that tab.

@@ -145,6 +145,17 @@ export class Audio {
     this.noise(heavy ? 0.22 : 0.12, { vol: heavy ? 0.7 : 0.5, freq: heavy ? 700 : 1100, x, z });
     this.tone(heavy ? 90 : 140, 0.12, { type: 'sine', vol: 0.5, slide: 50, x, z });
   }
+  /** Synthesised gunshots: a sharp crack, a body thump and a tail; the shotgun booms, the SMG snaps. */
+  gunshot(type = 'pistol', x, z) {
+    const big = type === 'shotgun', small = type === 'smg';
+    this.noise(big ? 0.42 : small ? 0.1 : 0.2, { vol: big ? 0.9 : small ? 0.5 : 0.7, filter: 'lowpass', freq: big ? 1600 : 3200, x, z, attack: 0.001 });
+    this.noise(0.05, { vol: 0.5, filter: 'highpass', freq: 3000, x, z, attack: 0.001 });
+    this.tone(big ? 70 : 120, big ? 0.3 : 0.14, { type: 'triangle', vol: big ? 0.6 : 0.4, slide: 40, x, z });
+  }
+  dryFire() {
+    this.tone(1800, 0.03, { type: 'square', vol: 0.12 });
+    this.tone(900, 0.03, { type: 'square', vol: 0.1, when: 0.04 });
+  }
   whoosh() {
     this.noise(0.14, { vol: 0.12, filter: 'bandpass', freq: 1800, q: 0.8, attack: 0.04 });
   }

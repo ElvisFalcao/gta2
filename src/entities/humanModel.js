@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { clamp, lerp } from '../core/util.js';
 import { roundedBox, RAMP } from '../core/toon.js';
-import { GUARD, MOVES, LYING_T } from './moves.js';
+import { GUARD, MOVES, LYING_T, aimPose } from './moves.js';
 
 export const SKIN = ['#3a2316', '#4f2f1d', '#6b4129', '#8a5636', '#a8724c', '#c99470', '#e2b896', '#f0d2b6'];
 export const SHIRTS = ['#e04a4a', '#2f7ae0', '#f5c430', '#2fae62', '#ffffff', '#26262a', '#9a52c2', '#ff8a3f', '#3fc9cf', '#f07aae', '#6f80a0', '#b85a2c'];
@@ -92,6 +92,16 @@ const BONES = [
   ['hipR', 'hips', -0.11, 0.02, 0],
   ['kneeR', 'hipR', 0, -THIGH, 0],
   ['ankleR', 'kneeR', 0, -SHIN, 0],
+  // shape bones: leaves that only carry flesh, so body shape (muscle, fat) can scale them without shearing the limbs
+  ['chest', 'torso', 0, 0, 0],
+  ['belly', 'torso', 0, 0.2, 0.05],
+  ['pelvis', 'hips', 0, 0, 0],
+  ['bicepL', 'shoulderL', 0, 0, 0],
+  ['foreL', 'elbowL', 0, 0, 0],
+  ['bicepR', 'shoulderR', 0, 0, 0],
+  ['foreR', 'elbowR', 0, 0, 0],
+  ['thighL', 'hipL', 0, 0, 0],
+  ['thighR', 'hipR', 0, 0, 0],
 ];
 const BI = Object.fromEntries(BONES.map((b, i) => [b[0], i]));
 const BIND = (() => {
@@ -160,17 +170,19 @@ function buildGeometry(L) {
   const shoe = L.shoes || '#f2f2f2', sole = shade(shoe, 0.55);
   const tw = 0.44, belly = L.belly || 1;
   // torso: shirt, extras, neck
-  k.add('torso', roundedBox(tw, TH, 0.27 * belly, 0.11), shirt, { y: TH / 2 + 0.02 });
-  if (L.stripe) k.add('torso', roundedBox(tw + 0.012, 0.08, 0.28 * belly + 0.012, 0.04), L.stripe, { y: 0.34 });
-  if (L.vest) for (const s of [-1, 1]) k.add('torso', roundedBox(0.14, TH - 0.06, 0.02, 0.01), L.vest, { x: s * 0.12, y: TH / 2 + 0.03, z: 0.137 * belly });
-  if (L.tie) k.add('torso', roundedBox(0.06, 0.32, 0.02, 0.01), L.tie, { y: TH - 0.2, z: 0.14 * belly });
+  k.add('chest', roundedBox(tw, TH, 0.27 * belly, 0.11), shirt, { y: TH / 2 + 0.02 });
+  // a round belly that stays tucked inside the shirt until he eats too many gatsbys
+  k.add('belly', G.ball, shirt, { sx: 0.4, sy: 0.34, sz: 0.3 });
+  if (L.stripe) k.add('chest', roundedBox(tw + 0.012, 0.08, 0.28 * belly + 0.012, 0.04), L.stripe, { y: 0.34 });
+  if (L.vest) for (const s of [-1, 1]) k.add('chest', roundedBox(0.14, TH - 0.06, 0.02, 0.01), L.vest, { x: s * 0.12, y: TH / 2 + 0.03, z: 0.137 * belly });
+  if (L.tie) k.add('chest', roundedBox(0.06, 0.32, 0.02, 0.01), L.tie, { y: TH - 0.2, z: 0.14 * belly });
   if (L.bandana) k.add('torso', G.cyl, L.bandana, { y: TH + 0.02, sx: 0.24, sy: 0.07, sz: 0.24 });
   k.add('torso', G.cyl, skin, { y: TH + 0.07, sx: 0.12, sy: 0.12, sz: 0.12 });
   if (L.dress) {
     k.add('hips', G.skirt, L.shirt, { y: -0.2, sx: 0.66, sy: 0.62, sz: 0.5 });
     k.add('hips', G.cyl, shade(L.shirt, 0.8), { y: -0.44, sx: 0.6, sy: 0.05, sz: 0.46 });
-  } else k.add('hips', roundedBox(tw * 0.98, 0.16, 0.25, 0.06), L.pants, { y: 0 });
-  if (L.belt) k.add('hips', roundedBox(tw, 0.05, 0.26, 0.02), L.belt, { y: 0.06 });
+  } else k.add('pelvis', roundedBox(tw * 0.98, 0.16, 0.25, 0.06), L.pants, { y: 0 });
+  if (L.belt) k.add('pelvis', roundedBox(tw, 0.05, 0.26, 0.02), L.belt, { y: 0.06 });
 
   // head: skin, ears, nose, modelled face (no outline on the small face parts)
   k.add('head', G.sphere, skin, { sx: 0.42, sy: 0.44, sz: 0.4 });
@@ -215,16 +227,16 @@ function buildGeometry(L) {
   // arms
   const sleeve = L.sleeves === 'long' ? shirt : skin;
   for (const s of ['L', 'R']) {
-    k.add('shoulder' + s, G.ball, shirt, { sx: 0.15, sy: 0.15, sz: 0.15 });
-    k.add('shoulder' + s, G.capsule, shirt, { y: -UPPER / 2, sx: 0.13, sy: UPPER / 1.5, sz: 0.13 });
+    k.add('bicep' + s, G.ball, shirt, { sx: 0.15, sy: 0.15, sz: 0.15 });
+    k.add('bicep' + s, G.capsule, shirt, { y: -UPPER / 2, sx: 0.13, sy: UPPER / 1.5, sz: 0.13 });
     k.add('elbow' + s, G.ball, sleeve, { sx: 0.12, sy: 0.12, sz: 0.12 });
-    k.add('elbow' + s, G.capsule, sleeve, { y: -FORE / 2, sx: 0.11, sy: FORE / 1.6, sz: 0.11 });
-    if (L.sleeves === 'long') k.add('elbow' + s, G.cyl, shade(shirt, 0.85), { y: -FORE + 0.02, sx: 0.12, sy: 0.04, sz: 0.12 });
+    k.add('fore' + s, G.capsule, sleeve, { y: -FORE / 2, sx: 0.11, sy: FORE / 1.6, sz: 0.11 });
+    if (L.sleeves === 'long') k.add('fore' + s, G.cyl, shade(shirt, 0.85), { y: -FORE + 0.02, sx: 0.12, sy: 0.04, sz: 0.12 });
     k.add('wrist' + s, G.ball, skin, { y: -0.05, sx: 0.12, sy: 0.13, sz: 0.1 });
   }
   // legs
   for (const s of ['L', 'R']) {
-    k.add('hip' + s, G.capsule, pants, { y: -THIGH / 2, sx: 0.18, sy: THIGH / 1.5, sz: 0.18 });
+    k.add('thigh' + s, G.capsule, pants, { y: -THIGH / 2, sx: 0.18, sy: THIGH / 1.5, sz: 0.18 });
     k.add('knee' + s, G.ball, pants, { sx: 0.165, sy: 0.165, sz: 0.165 });
     k.add('knee' + s, G.capsule, pants, { y: -SHIN / 2, sx: 0.155, sy: SHIN / 1.5, sz: 0.155 });
     k.add('ankle' + s, roundedBox(0.16, 0.11, 0.28, 0.05), shoe, { y: -0.03, z: 0.05 });
@@ -291,7 +303,7 @@ export class HumanRig {
     this.phase = Math.random() * 6;
     this.speed = 0;
     this.stanceW = 0;
-    this.muscle = 1;
+    this.bodyKey = -1;
     this.group.scale.setScalar((look.build || 1) * SCALE);
     this.blob = new THREE.Mesh(BLOB_GEO, blobMaterial());
     this.blob.position.y = 0.03;
@@ -299,11 +311,26 @@ export class HumanRig {
     this.group.add(this.blob);
   }
 
-  setMuscle(m) {
-    if (m === this.muscle) return;
-    this.muscle = m;
-    this.bones.torso.scale.set(m, 1, 1 + (m - 1) * 0.6);
-    this.bones.head.scale.set(1 / m, 1, 1 / (1 + (m - 1) * 0.6));
+  /**
+   * Body shape from training and diet, each 0..1: muscle = broad chest, big arms and shoulders;
+   * fat = wide waist, round belly, thick legs. Only the leaf shape bones scale.
+   */
+  setBody(m, f) {
+    const key = Math.round(m * 100) * 1000 + Math.round(f * 100);
+    if (key === this.bodyKey) return;
+    this.bodyKey = key;
+    const B = this.bones;
+    B.chest.scale.set(1 + m * 0.34 + f * 0.28, 1, 1 + m * 0.22 + f * 0.32);
+    B.belly.scale.setScalar(0.45 + f * 1.0);
+    B.pelvis.scale.set(1 + f * 0.32, 1, 1 + f * 0.36);
+    const arm = 1 + m * 0.65 + f * 0.25, fore = 1 + m * 0.35 + f * 0.16, leg = 1 + m * 0.25 + f * 0.38;
+    for (const s of ['L', 'R']) {
+      B['bicep' + s].scale.set(arm, 1 + m * 0.04, arm);
+      B['fore' + s].scale.set(fore, 1, fore);
+      B['thigh' + s].scale.set(leg, 1, leg);
+      B['shoulder' + s].position.x = (s === 'L' ? 1 : -1) * 0.27 * (1 + m * 0.2 + f * 0.13);
+      B['hip' + s].position.x = (s === 'L' ? 1 : -1) * 0.11 * (1 + f * 0.3);
+    }
   }
 
   reset() {
@@ -353,8 +380,8 @@ export class HumanRig {
   }
 
   /**
-   * Pose the skeleton. s: { speed, mode, action, actionT, airborne, carry, liftP, guard }
-   * action: punchL (jab) | punchR (cross) | kick | bat | hit | windup, actionT 0..1.
+   * Pose the skeleton. s: { speed, mode, action, actionT, airborne, carry, liftP, guard, aim, recoil }
+   * action: punchL (jab) | punchR (cross) | kick | hook | body | uppercut | bat | swing | hit | windup, actionT 0..1.
    */
   animate(dt, s) {
     this.t += dt;
@@ -574,6 +601,9 @@ export class HumanRig {
       this.blend(upper, this.stanceW);
       this.blend(legKeys, this.stanceW * (1 - k));
     }
+
+    // holding a gun up (aim 0..1), recoil kicks the arms
+    if (s.aim > 0.01 && !s.airborne) this.blend(aimPose(s.recoil || 0), s.aim);
 
     // actions layered on top
     const a = s.action;

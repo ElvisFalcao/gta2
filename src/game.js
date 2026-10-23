@@ -21,6 +21,8 @@ import { Effects } from './systems/effects.js';
 import { Audio } from './systems/audio.js';
 import { Interactions } from './systems/interactions.js';
 import { loadSave, writeSave, clearSave, loadSettings, writeSettings, freshState } from './systems/save.js';
+import { WeaponSystem } from './systems/weapons.js';
+import { BoxingClub } from './missions/boxing.js';
 import { HUD } from './ui/hud.js';
 import { VoiceSystem } from './systems/voice.js';
 import { Menu } from './ui/menu.js';
@@ -90,7 +92,7 @@ export class Game {
   constructor() {
     const s = loadSettings();
     const touch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    this.settings = { quality: touch ? 'medium' : 'high', sfx: 0.8, music: 0.6, sens: 1, touch: 'auto', voices: 'on', ...s };
+    this.settings = { quality: touch ? 'medium' : 'high', sfx: 0.8, music: 0.6, sens: 1, touch: 'auto', voices: 'on', aimAssist: 'strong', ...s };
     const qp = new URLSearchParams(location.search).get('quality');
     if (qp) this.settings.quality = qp;
     if (!QUALITY[this.settings.quality]) this.settings.quality = 'medium';
@@ -174,6 +176,8 @@ export class Game {
     this.gps = new GPS(this);
     this.interactions = new Interactions(this);
     this.activities = new Activities(this);
+    this.weapons = new WeaponSystem(this);
+    this.boxing = new BoxingClub(this);
     this.missions = new MissionSystem(this);
     this.applySettings();
 
@@ -231,7 +235,8 @@ export class Game {
   continueGame() {
     const s = loadSave();
     if (!s) return this.newGame();
-    this.state = { ...freshState(), ...s, stats: { ...freshState().stats, ...s.stats }, totals: { ...freshState().totals, ...s.totals } };
+    const f = freshState();
+    this.state = { ...f, ...s, stats: { ...f.stats, ...s.stats }, totals: { ...f.totals, ...s.totals }, weapons: { ...f.weapons, ...s.weapons } };
     this.env.hours = s.time?.hours ?? 9;
     this.env.day = s.time?.day ?? 1;
     const pos = s.pos;
@@ -254,6 +259,7 @@ export class Game {
     this.audio.init();
     this.missions.refreshGivers();
     this.activities.refresh();
+    this.hud.updateWeapon();
   }
 
   save() {
@@ -264,6 +270,12 @@ export class Game {
       s.pos = { x: p.x, z: p.z, h: p.heading, plateau: p.onPlateau };
     }
     return writeSave(s);
+  }
+
+  /** Save and go back to the title screen. A mission in progress is dropped (missions only save when passed). */
+  quitToTitle() {
+    this.save();
+    location.reload(); // the title screen comes back with Continue
   }
 
   resetSave() {
@@ -381,6 +393,7 @@ export class Game {
     await this.hud.fade(true, 700);
     const fine = Math.min(this.state.money, 100 * Math.max(1, this.police.stars));
     this.state.money -= fine;
+    this.weapons.confiscate();
     this.police.clear();
     this.peds.clearNonMission();
     p.anim = null;
@@ -448,7 +461,10 @@ export class Game {
       case 'NOPOLICE': this.cheats.noPolice = !this.cheats.noPolice; if (this.cheats.noPolice) this.police.clear(); return `Police ${this.cheats.noPolice ? 'ignore you' : 'are back on duty'}.`;
       case 'DAY': this.env.hours = 11; return 'Good morning, Cape Town.';
       case 'NIGHT': this.env.hours = 21; return 'The city lights up.';
-      case 'GYMRAT': this.state.stats.muscle = 100; this.state.stats.stamina = 100; return 'Max muscle & stamina. Jislaaik!';
+      case 'GYMRAT': Object.assign(this.state.stats, { muscle: 100, stamina: 100, fat: 0 }); return 'Max muscle & stamina, zero fat. Jislaaik!';
+      case 'GATSBY': this.state.stats.fat = 100; return 'One gatsby too many… Sizwe is very heavy.';
+      case 'ARMED': this.weapons.giveAll(); return 'Tools and guns, fully loaded. Careful now.';
+      case 'BOXER': this.state.boxing = 3; return 'Coach Mzi taught you everything: hook, uppercut and body shots.';
       case 'SKIPMISSION': return this.missions.debugPass() ? 'Mission passed.' : 'No mission active.';
       default: return 'Nothing happens. Eish.';
     }
@@ -544,6 +560,7 @@ export class Game {
       this.hitstop -= dt;
       fdt = dt * 0.04;
     }
+    this.weapons.update(dt);
     p.update(fdt, input);
     this.vehicles.update(dt);
     this.peds.update(fdt);
@@ -551,6 +568,7 @@ export class Game {
     this.population.update(dt);
     this.missions.update(dt);
     this.activities.update(dt);
+    this.boxing.update();
     this.interactions.update();
     this.gps.update(dt);
     this.effects.update(dt);

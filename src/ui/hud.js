@@ -1,6 +1,7 @@
 // In-game HUD: stats, rotating minimap with GPS, objectives, dialogue, choices,
 // banners, prompts, phone and memory overlays.
 
+import { WEAPONS, ORDER, iconSvg } from '../systems/weapons.js';
 import { PAD_GLYPH } from '../core/input.js';
 import { T } from '../world/grid.js';
 import { WORLD } from '../world/mapData.js';
@@ -56,7 +57,9 @@ export class HUD {
       dialogue: $('#dialogue'), choices: $('#choices'), damage: $('#damage'), toasts: $('#toasts'), holdbar: $('#holdbar'),
       arrest: $('#arrest'), fade: $('#fade'), phone: $('#phone'), memory: $('#memory'), touch: $('#touch'),
       actionBtn: $('.b-action'), actionLbl: $('.b-action span'), enterBtn: $('.b-enter'), taxiBtn: $('.b-taxi'),
+      weapon: $('#weapon'), weaponBtn: $('.b-weapon'), attackLbl: $('.b-attack .atk-lbl'), attackIco: $('.b-attack svg'),
     };
+    this.punchIcon = this.el.attackIco ? this.el.attackIco.outerHTML : '';
     this.cache = {};
     this.mm = $('#minimap');
     this.mmCtx = this.mm.getContext('2d');
@@ -182,6 +185,30 @@ export class HUD {
       el.classList.toggle('hidden', !v);
       el.innerHTML = v;
     });
+  }
+
+  /** Weapon readout (top right), the touch weapon button, and PUNCH / SHOOT / SWING on the attack button. */
+  updateWeapon() {
+    const w = this.game.weapons;
+    if (!w) return;
+    const type = w.current, spec = WEAPONS[type];
+    const owned = ORDER.filter((t) => w.inv.owned[t]).length;
+    const ammo = spec.gun ? String(w.ammo(type)) : '';
+    const E = this.el;
+    E.weapon.classList.toggle('hidden', type === 'fists' && owned < 2);
+    E.weapon.classList.toggle('empty', spec.gun && w.ammo(type) <= 0);
+    E.weapon.querySelector('.w-ico').innerHTML = iconSvg(type);
+    E.weapon.querySelector('.w-ammo').textContent = spec.gun ? ammo : spec.name;
+    if (E.weaponBtn) {
+      E.weaponBtn.classList.toggle('dim', owned < 2);
+      E.weaponBtn.querySelector('.w-ico').innerHTML = iconSvg(type);
+      E.weaponBtn.querySelector('.w-lbl').textContent = spec.gun ? ammo : type === 'fists' ? 'FISTS' : spec.name.split(' ').pop().toUpperCase();
+    }
+    if (E.attackLbl) {
+      E.attackLbl.textContent = spec.gun ? 'SHOOT' : spec.melee ? 'SWING' : 'PUNCH';
+      const ico = E.weaponBtn ? E.attackLbl.parentElement.querySelector('svg') : null;
+      if (ico) ico.outerHTML = spec.gun || spec.melee ? iconSvg(type) : this.punchIcon;
+    }
   }
 
   setAction(label) {

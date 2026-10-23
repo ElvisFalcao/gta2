@@ -29,6 +29,11 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [x] Saves automatically in the browser
 - [x] Automated smoke test and a full story playthrough (Playwright)
 - [x] Street voices: people greet, chat and react out loud, with speech bubbles (text-to-speech placeholders for now)
+- [x] Tools and guns with a store, pickups, aim assist and armed police
+- [x] Visible body: gym muscle and junk-food fat change Sizwe's shape and speed
+- [x] Boxing lessons in Langa add hook, uppercut and body-shot combos
+- [x] Pause menu can return to the title screen (saves first)
+- [ ] Weapons, body and boxing tried by a person on the iPhone (aim assist feel, weapon button reach, lesson timing)
 
 ### Quality
 - [ ] Played start to finish by a person, on the iPhone and on the PC, with what broke written down and fixed
@@ -52,17 +57,17 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [ ] Shown to first players, with their feedback collected
 
 ## Next up
-- The sunny-toon restyle is live in all four stages (people + fighting, city, cars, HUD). Play it on the iPhone at https://elvisfalcao.github.io/gta2/ and note what looks off or runs slowly. If the old look still shows, reload once: the offline cache updates in the background.
-- Possible polish next: toon colours on the minimap and big map. Medium quality is now about 770k triangles in Bo-Kaap and 990k in the city centre; if the iPhone stutters, drop tree outlines on Medium too (`buildTrees` in `src/world/cityMeshes.js`).
-- Check the restyled city on the iPhone at Medium quality; Bo-Kaap is about 600k triangles and the city centre about 830k, so watch the frame rate there.
-- On the iPhone: Add to Home Screen from https://elvisfalcao.github.io/gta2/ and play full screen; note anything about the touch buttons that still feels wrong.
+- Try the new systems on the iPhone at https://elvisfalcao.github.io/gta2/: buy a pistol at Sipho's Hardware (Woodstock), feel the aim assist (Settings → Aim assist), switch weapons with the button above RUN, take a boxing lesson in Langa, eat a few gatsbys and watch Sizwe slow down. Note what feels off.
+- Balance pass once played: weapon prices vs mission pay, how fast fat builds and burns, how hard armed cops hit.
+- The sunny-toon restyle is live everywhere; only the minimap and big-map colours are still the old style.
+- Medium quality is about 780k triangles in Bo-Kaap and 1M in the city centre; if the iPhone stutters, drop tree outlines on Medium too (`buildTrees` in `src/world/cityMeshes.js`).
 - Play with sound on and listen to the AI street voices (`assets/voice/ai/`); fix spellings in `WORDS` in `tools/voice-gen/generate.py` and regenerate with `--ids <id> --force`.
-- Get native speakers to check the Kaaps, Afrikaans and isiXhosa lines in `src/data/barks.js`.
-- Record the ★ first-pass voice lines as `assets/voice/<voice>/<id>.mp3`, then run `node tools/voice-script.mjs`.
+- Get native speakers to check the Kaaps, Afrikaans and isiXhosa lines in `src/data/barks.js`; record the ★ first-pass lines as `assets/voice/<voice>/<id>.mp3`, then run `node tools/voice-script.mjs`.
 - Decide which repo is the real Mother City (gta2 is far ahead of gta3; gta is empty).
-- Run `npm run playthrough` after changes to check all 10 missions still complete.
+- After changes run `features` and `story` (`node tools/smoke.mjs <url> <dir> features|story`).
 
 ## Log
+- 2026-10-23 · Claude Code · Tools & guns (cricket bat, spanner, pistol, SMG, shotgun) with Sipho's Hardware in Woodstock, pickups, aim assist + lock-on reticle, armed cops at 3 stars; visible body (gym muscle, junk-food fat that slows you down, fruit cart); Langa Boxing Club lessons (hook, uppercut, body shot combos); Pause → Title screen. `tools/scenarios/features.mjs` (18 checks) and `movesheet.mjs`.
 - 2026-10-23 · Claude Code · Waterfront, boats and murals restyle: the Wharf gets shopfront glass, upper windows and striped awnings; brighter clock tower, aquarium with portholes and fish-and-chips canopy; rounded outlined gondolas on the big wheel; chubby inked harbour boats and container ships; Woodstock murals repainted as cartoon murals (protea, Table Mountain, a face or a snoek, plus a slogan) with ink frames.
 - 2026-10-23 · Claude Code · Polish pass: smooth toon mountains with ink silhouettes and brighter fynbos / sandstone colours, a fuller tablecloth cloud, puffy outlined tree crowns and rounder bushes (no tree outlines on Low quality), toon landmarks with ink shells (stadium, castle rebuilt as five walls, cable car, lighthouse). `tools/scenarios/landmarks.mjs` screenshots them.
 - 2026-10-23 · Claude Code · HUD and menus restyle (stage 4): cream sticker panels with ink borders and hard drop shadows, ink-outlined numbers, Lilita One for big titles, comic speech bubbles, restyled touch buttons, menu and title screen. `tools/scenarios/hudsheet.mjs` screenshots the HUD, a choice and the menu.

@@ -4,7 +4,7 @@ import { ChaseDriver } from './vehicles.js';
 import { LOOKS } from '../entities/humanModel.js';
 import { clamp, dist, rand, chance } from '../core/util.js';
 
-const CRIME = { assault: 1, runOver: 1, assaultCop: 1.2, stealCop: 1.5, ramCop: 0.6, destroyCop: 2, explosion: 1 };
+const CRIME = { assault: 1, runOver: 1, assaultCop: 1.2, stealCop: 1.5, ramCop: 0.6, destroyCop: 2, explosion: 1, gunfire: 1, shooting: 1.3 };
 
 export class PoliceSystem {
   constructor(game) {
@@ -44,6 +44,11 @@ export class PoliceSystem {
         c.ai = 'wander';
         c.kind = 'civ';
         c.reported = true;
+        if (c.gunMesh) {
+          c.gunMesh.parent?.remove(c.gunMesh); // holster
+          c.gunMesh = null;
+          c.weapon = 'fists';
+        }
       }
     }
     this.cops.clear();
@@ -64,6 +69,11 @@ export class PoliceSystem {
     if (stars === 0) {
       this.arrestT = 0;
       return;
+    }
+    // three stars: officers already on the scene draw their pistols
+    if (stars >= 3) for (const c of this.cops) if (c.state === 'ok' && c.weapon !== 'pistol') {
+      c.giveGun();
+      c.ai = 'fight';
     }
     // line of sight-ish: any active cop close by keeps the heat on
     for (const c of this.cops) if (c.state === 'ok' && dist(c.x, c.z, p.x, p.z) < 35) this.lastSeen = g.time;
@@ -126,7 +136,8 @@ export class PoliceSystem {
 
   addCop(x, z) {
     const g = this.game;
-    const c = g.peds.spawn(x, z, { kind: 'police', look: { ...LOOKS.police, skin: rand(0, 1) < 0.5 ? '#6b4129' : '#a8724c' }, ai: this.stars >= 2 ? 'fight' : 'chase', health: 70, runSpeed: rand(6, 7.2), dmgMul: 0.9 });
+    // at three stars the officers come with pistols drawn
+    const c = g.peds.spawn(x, z, { kind: 'police', look: { ...LOOKS.police, skin: rand(0, 1) < 0.5 ? '#6b4129' : '#a8724c' }, ai: this.stars >= 2 ? 'fight' : 'chase', health: 70, runSpeed: rand(6, 7.2), dmgMul: 0.9, weapon: this.stars >= 3 ? 'pistol' : 'fists' });
     c.target = g.player;
     this.cops.add(c);
     return c;

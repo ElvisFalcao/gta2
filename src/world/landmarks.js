@@ -28,6 +28,7 @@ export class Landmarks {
     this.anim = [];
     this.smokeSpots = [{ x: 640, y: 3.5, z: 108 }];
     this.muralSpots = [];
+    this.muralBuildings = [];
   }
 
   sign(text, x, y, z, ry, w, h, opts = {}) {
@@ -406,6 +407,15 @@ export class Landmarks {
     }
     k.block(g.x + 3, 0, g.z, 1, 0.5, 2.2, '#3a6ea5');
     this.sign('OUTDOOR GYM', g.x + 3.5, 1.6, g.z + 4, Math.PI / 2, 3, 0.7, { bg: '#3a6ea5', fg: '#fff', double: true });
+    // fruit & smoothie cart next to the gym: the healthy alternative to a gatsby
+    const f = this.grid.findOpen(g.x - 1, g.z + 9, 10) || { x: g.x - 1, z: g.z + 9 };
+    this.fruitStall = { x: f.x, z: f.z };
+    k.block(f.x, 0.3, f.z, 2.2, 0.9, 1.2, '#fbf6ea');
+    for (let j = 0; j < 5; j++) k.block(f.x - 1.1 + 0.22 + j * 0.44, 2.2, f.z, 0.44, 0.1, 1.6, j % 2 ? '#ffffff' : '#5fd35a');
+    for (const sx of [-1, 1]) k.cyl(f.x + sx * 1.0, 1.2, f.z - 0.5, 0.04, 1.0, '#8a6040', 6);
+    const fruit = ['#ff8c42', '#ffd23f', '#f25f5c', '#7ed957', '#ff5fa2'];
+    for (let j = 0; j < 10; j++) k.add(GEO.sphere, { x: f.x - 0.85 + (j % 5) * 0.42, y: 1.3, z: f.z - 0.25 + Math.floor(j / 5) * 0.4, sx: 0.28, sy: 0.24, sz: 0.28, color: fruit[j % 5] });
+    for (const sx of [-1, 1]) k.cyl(f.x + sx * 0.8, 0, f.z + 0.6, 0.18, 0.3, '#3a3f44', 8);
   }
 
   stadium(k) {
@@ -514,6 +524,7 @@ export class Landmarks {
       m.rotation.y = f.ry;
       this.root.add(m);
       this.muralSpots.push({ x: f.x, y: h / 2 + 0.4, z: f.z, nx: Math.sign(f.tx), nz: Math.sign(f.tz) });
+      this.muralBuildings.push(b);
       placed++;
     }
   }
