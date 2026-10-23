@@ -51,7 +51,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [ ] Shown to first players, with their feedback collected
 
 ## Next up
-- Rolling the sunny-toon style into the game in stages, pushing after each: 1 people + fighting (done), 2 city (done), 3 cars (next: rounded toon shells with ink outlines, same sizes and handling), 4 HUD and menus.
+- Rolling the sunny-toon style into the game in stages, pushing after each: 1 people + fighting (done), 2 city (done), 3 cars (done), 4 HUD and menus (next).
 - Check the restyled city on the iPhone at Medium quality; Bo-Kaap is about 600k triangles and the city centre about 830k, so watch the frame rate there.
 - On the iPhone: Add to Home Screen from https://elvisfalcao.github.io/gta2/ and play full screen; note anything about the touch buttons that still feels wrong.
 - Play with sound on and listen to the AI street voices (`assets/voice/ai/`); fix spellings in `WORDS` in `tools/voice-gen/generate.py` and regenerate with `--ids <id> --force`.
@@ -61,6 +61,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - Run `npm run playthrough` after changes to check all 10 missions still complete.
 
 ## Log
+- 2026-10-23 · Claude Code · Cars restyle (stage 3): every vehicle rebuilt from rounded toon shells with ink outlines, big round headlights, chrome bumpers, a Quantum-style taxi nose and outlined chunky wheels; same sizes and handling. `tools/scenarios/carsheet.mjs` makes a line-up contact sheet.
 - 2026-10-23 · Claude Code · City restyle (stage 2): toon buildings with cartoon window frames, Cape Dutch gables on Bo-Kaap and Victorian rows, ink outlines on every building, brighter palettes; ground, roads and trees toon-shaded. `tools/scenarios/tour.mjs` and `perf.mjs` for screenshots and triangle counts.
 - 2026-10-23 · Claude Code · Game people restyle (stage 1): everyone in the game is now a sunny-toon skinned character with bending joints, the jab / cross / kick combo, guard stance, knockdown and get-up, hit-stop and POW bursts.
 - 2026-10-23 · Claude Code · Look test: fighting — guard stance, jab / cross / roundhouse-kick combo with input buffering, hit reactions, knockdown and get-up, hit-stop, camera shake and POW bursts (`src/lookdev/moves.js`, `tools/lookdev-fight.mjs`). Mechanics handover in `docs/mechanics-handover.md`.

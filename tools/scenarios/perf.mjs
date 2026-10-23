@@ -13,7 +13,7 @@ export default async function ({ page, run, sleep }) {
       let n = 0;
       await new Promise((res) => { const f = () => { n++; if (performance.now() - t0 < 2000) requestAnimationFrame(f); else res(); }; requestAnimationFrame(f); });
       const i = g.renderer.info.render;
-      return { fps: (n / 2).toFixed(1), calls: i.calls, tris: i.triangles, peds: g.peds.list.length };
+      return { fps: (n / 2).toFixed(1), calls: i.calls, tris: i.triangles, peds: g.peds.list.length, cars: g.vehicles.list.length, carTris: g.vehicles.list.reduce((a, v) => a + v.body.children.concat(v.body).reduce((b, m) => b + (m.geometry?.index ? m.geometry.index.count / 3 : 0), 0), 0) };
     }, [x, z]);
     console.log(name, JSON.stringify(r));
     if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/perf-${name}.png` });
