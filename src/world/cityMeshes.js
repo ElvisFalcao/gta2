@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { WORLD, LAND, WATER_HOLES, MOUNTAINS } from './mapData.js';
 import { T, mountainHeight } from './grid.js';
 import { MeshKit, GEO, vcMaterial } from '../core/meshkit.js';
-import { RAMP_SOFT } from '../core/toon.js';
+import { RAMP, RAMP_SOFT, outlineMaterial, Merger } from '../core/toon.js';
 import { makeToonFacade, toonWallMaterial, GABLE, GABLE_TRIM, TRIM_COLOUR, buildingOutlines } from './toonCity.js';
 import { RNG, clamp, lerp, valueNoise, smoothstep } from '../core/util.js';
 import {
@@ -374,52 +374,62 @@ export class CityMeshes {
   buildTrees() {
     const T_ = this.city.trees;
     const dummy = new THREE.Object3D();
-    const trunkMat = toonMat({ color: '#7a5a3c' });
+    const trunkMat = toonMat({ color: '#8a6040' });
     const leafMat = toonMat({ color: '#ffffff' });
+    const ink = outlineMaterial('#2a1d17', 0.1), trunkInk = outlineMaterial('#2a1d17', 0.05);
     const rng = new RNG(31);
-    const make = (list, trunkGeo, crownGeo, trunkH, crownY, crownScale, palette) => {
+    const make = (list, trunkGeo, crownGeo, palette, crownInk = true) => {
       if (!list.length) return;
       const tm = new THREE.InstancedMesh(trunkGeo, trunkMat, list.length);
       const cm = new THREE.InstancedMesh(crownGeo, leafMat, list.length);
+      const parts = [tm, cm];
+      // ink outlines cost a second copy of every tree, so Low quality goes without
+      if (this.quality?.name !== 'low') {
+        parts.push(new THREE.InstancedMesh(trunkGeo, trunkInk, list.length));
+        if (crownInk) parts.push(new THREE.InstancedMesh(crownGeo, ink, list.length));
+      }
       list.forEach((t, i) => {
         dummy.position.set(t.x, 0, t.z);
         dummy.rotation.set(0, t.r, 0);
         dummy.scale.setScalar(t.s);
         dummy.updateMatrix();
-        tm.setMatrixAt(i, dummy.matrix);
-        cm.setMatrixAt(i, dummy.matrix);
+        for (const m of parts) m.setMatrixAt(i, dummy.matrix);
         cm.setColorAt(i, C(rng.pick(palette)));
       });
       tm.castShadow = cm.castShadow = true;
       cm.receiveShadow = true;
-      this.root.add(tm, cm);
+      for (const m of parts.slice(2)) m.raycast = () => {};
+      this.root.add(...parts);
     };
     const trunk = (h, r) => {
-      const g = new THREE.CylinderGeometry(r * 0.75, r, h, 6);
+      const g = new THREE.CylinderGeometry(r * 0.7, r, h, 7);
       g.translate(0, h / 2, 0);
       return g;
     };
-    const oakCrown = new THREE.IcosahedronGeometry(2.6, 1);
-    oakCrown.scale(1, 0.85, 1);
-    oakCrown.translate(0, 4.2, 0);
-    make(T_.oak, trunk(3, 0.3), oakCrown, 3, 4.2, 1, ['#4f7d34', '#5b8a3c', '#467030', '#6a9444']);
-    const pineCrown = new THREE.IcosahedronGeometry(3.4, 1);
-    pineCrown.scale(1, 0.4, 1);
-    pineCrown.translate(0, 6.2, 0);
-    make(T_.pine, trunk(6, 0.32), pineCrown, 6, 6.2, 1, ['#3e6b38', '#365f33', '#46773e']);
-    // palms: drooping fronds
+    // cartoon crowns: a few smooth round lobes merged into one puffy shape
+    // (low-segment spheres: every tree is drawn twice, once for the ink, and all of them are always in the batch)
+    const lobe = new THREE.SphereGeometry(1, 7, 4);
+    const crown = (lobes, sy = 1) => {
+      const mg = new Merger();
+      for (const [x, y, z, r] of lobes) mg.add(lobe, '#ffffff', { x, y, z, sx: r, sy: r * sy, sz: r });
+      return mg.build();
+    };
+    make(T_.oak, trunk(3.2, 0.32), crown([[0, 4.5, 0, 2.2], [1.4, 3.9, 0.5, 1.55], [-1.3, 4.0, -0.4, 1.65]]), ['#5fae45', '#6cbc4c', '#52a040', '#7cc456']);
+    // Cape stone pine: a wide flat umbrella
+    make(T_.pine, trunk(6, 0.3), crown([[0, 6.5, 0, 3.1], [2.2, 6.2, 0.8, 2.2], [-2.1, 6.25, -0.8, 2.3]], 0.42), ['#3f8a4a', '#4a9852', '#367d42']);
+    // palms: drooping fronds round a coconut knot
     const pk = new MeshKit();
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2;
-      pk.add(GEO.box, { x: Math.sin(a) * 1.4, y: 7.6, z: Math.cos(a) * 1.4, sx: 0.5, sy: 0.08, sz: 3.2, ry: a, rx: 0.42, color: '#ffffff' });
+      pk.add(GEO.box, { x: Math.sin(a) * 1.4, y: 7.6, z: Math.cos(a) * 1.4, sx: 0.55, sy: 0.08, sz: 3.2, ry: a, rx: 0.42, color: '#ffffff' });
     }
-    pk.add(GEO.ico, { x: 0, y: 7.8, z: 0, sx: 0.9, sy: 0.7, sz: 0.9, color: '#9c8a55' });
-    const palmTrunk = new THREE.CylinderGeometry(0.18, 0.28, 7.8, 6);
+    pk.add(GEO.ico, { x: 0, y: 7.8, z: 0, sx: 0.9, sy: 0.7, sz: 0.9, color: '#c9a860' });
+    const palmTrunk = new THREE.CylinderGeometry(0.18, 0.28, 7.8, 7);
     palmTrunk.translate(0, 3.9, 0);
-    make(T_.palm, palmTrunk, pk.build(), 7.8, 7.6, 1, ['#4c8a3a', '#5a9a40', '#3f7a33']);
-    // fynbos bushes (no trunk)
+    make(T_.palm, palmTrunk, pk.build(), ['#5cb446', '#6cc24e', '#4ea63e'], false);
+    // fynbos bushes (no trunk): soft round clumps, with the odd pink protea bush
     if (T_.bush.length) {
-      const bush = new THREE.IcosahedronGeometry(1, 0);
+      const bush = new THREE.SphereGeometry(1, 6, 3);
       bush.scale(1, 0.65, 1);
       bush.translate(0, 0.45, 0);
       const bm = new THREE.InstancedMesh(bush, leafMat, T_.bush.length);
@@ -429,7 +439,7 @@ export class CityMeshes {
         dummy.scale.setScalar(t.s);
         dummy.updateMatrix();
         bm.setMatrixAt(i, dummy.matrix);
-        bm.setColorAt(i, C(rng.pick(['#5d6b3a', '#6f7a41', '#7d7a46', '#566b3f', '#8a6f5a', '#b86b7b'])));
+        bm.setColorAt(i, C(rng.pick(['#6f9a45', '#83a84c', '#9aa850', '#6a9a52', '#c07a8a', '#e08aa8'])));
       });
       bm.receiveShadow = true;
       this.root.add(bm);
@@ -511,25 +521,30 @@ export class CityMeshes {
   buildMountains() {
     const kit = new MeshKit();
     for (const m of MOUNTAINS) this.addMountain(kit, m);
-    const geo = kit.build().toNonIndexed();
+    const geo = kit.build();
     geo.computeVertexNormals();
-    const mesh = new THREE.Mesh(geo, vcMaterial({ flatShading: true }));
+    const mesh = new THREE.Mesh(geo, new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: RAMP }));
     mesh.name = 'mountains';
     this.add(mesh, { cast: true, receive: true });
+    // ink silhouette, as thick as the mountains are big
+    const ink = new THREE.Mesh(geo, outlineMaterial('#2a1d17', 1.6));
+    ink.raycast = () => {};
+    this.add(ink, { receive: false });
 
     // Table Mountain's famous "tablecloth" cloud
     const tm = MOUNTAINS[0];
     const ck = new MeshKit();
     const rng = new RNG(8);
-    for (let i = 0; i < 24; i++) {
-      const a = Math.PI * 1.08 + (i / 23) * Math.PI * 0.84; // north face of the plateau
-      const e = rng.range(1.04, 1.18);
+    // overlapping puffs along the north edge, plus a curtain spilling down the face
+    for (let i = 0; i < 40; i++) {
+      const a = Math.PI * 1.08 + (i / 39) * Math.PI * 0.84; // north face of the plateau
+      const e = rng.range(1.02, 1.1);
       const x = tm.cx + Math.cos(a) * tm.topRx * e;
       const z = tm.cz + Math.sin(a) * tm.topRz * e;
-      ck.add(GEO.sphere, { x, y: tm.height + rng.range(-3, 4), z, sx: rng.range(26, 42), sy: rng.range(7, 11), sz: rng.range(14, 22), color: '#ffffff' });
-      ck.add(GEO.sphere, { x, y: tm.height - rng.range(18, 45), z: z - rng.range(8, 18), sx: rng.range(18, 30), sy: rng.range(14, 26), sz: rng.range(8, 14), color: '#f4f6f8' });
+      ck.add(GEO.sphere, { x, y: tm.height + rng.range(0, 5), z, sx: rng.range(34, 50), sy: rng.range(10, 15), sz: rng.range(20, 30), color: '#ffffff' });
+      if (i % 2 === 0) ck.add(GEO.sphere, { x, y: tm.height - rng.range(14, 34), z: z - rng.range(6, 14), sx: rng.range(26, 38), sy: rng.range(22, 34), sz: rng.range(10, 16), color: '#f3f6fa' });
     }
-    this.cloth = new THREE.Mesh(ck.build(), new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.72, emissive: '#c9d2da', emissiveIntensity: 0.45, depthWrite: false }));
+    this.cloth = new THREE.Mesh(ck.build(), new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: RAMP_SOFT, transparent: true, opacity: 0.9, emissive: '#dfe7ee', emissiveIntensity: 0.35, depthWrite: false }));
     this.cloth.renderOrder = 3;
     this.root.add(this.cloth);
   }
@@ -600,34 +615,40 @@ export class CityMeshes {
     const colorFn = (x, y, z) => {
       const f = clamp(y / H, 0, 1);
       if (m.profile === 'mesa') {
-        if (f < 0.25) return colLerp('#4a6834', '#587040', f / 0.25);
-        if (f < 0.4) return colLerp('#587040', '#7f7c63', (f - 0.25) / 0.15);
+        if (f < 0.25) return colLerp('#5e9a3c', '#74a446', f / 0.25);
+        if (f < 0.4) return colLerp('#74a446', '#b8a27e', (f - 0.25) / 0.15);
         if (f < 0.985) {
-          const band = Math.sin(y * 0.38 + Math.sin(x * 0.05) * 1.5) * 0.5 + 0.5;
-          return colLerp('#9a9284', '#7d776b', band);
+          // sandstone strata
+          const band = Math.sin(y * 0.38 + Math.sin(x * 0.05) * 1.5) > 0.2 ? 1 : 0;
+          return colLerp('#c4ad88', '#a99272', band);
         }
-        return C('#858a68');
+        return C('#93b05a');
       }
       if (m.profile === 'lion') {
-        if (f < 0.5) return colLerp('#4f6b39', '#667744', f / 0.5);
-        const band = Math.sin(y * 0.5) * 0.5 + 0.5;
-        return colLerp('#938b7a', '#7b7568', band);
+        if (f < 0.5) return colLerp('#5e9a3c', '#86a64c', f / 0.5);
+        return Math.sin(y * 0.5) > 0 ? C('#b8a07e') : C('#a28a6c');
       }
-      if (f < 0.55) return colLerp('#506c3a', '#677848', f / 0.55);
-      if (f < 0.85) return colLerp('#677848', '#86836f', (f - 0.55) / 0.3);
-      return colLerp('#8b897c', '#9a978a', (f - 0.85) / 0.15);
+      if (f < 0.55) return colLerp('#5c983b', '#7ea24a', f / 0.55);
+      if (f < 0.85) return colLerp('#7ea24a', '#ae9c7c', (f - 0.55) / 0.3);
+      return colLerp('#b3a283', '#c6b697', (f - 0.85) / 0.15);
     };
+    // one shared vertex per ring point, so the toon bands and the ink hull run smoothly over the rock
+    const base = kit.count;
+    const push = (p) => {
+      kit.pos.push(p[0], p[1], p[2]);
+      kit.nor.push(0, 1, 0); // recomputed once all mountains are in
+      const cc = colorFn(p[0], p[1], p[2]);
+      kit.col.push(cc.r, cc.g, cc.b);
+      kit.count++;
+    };
+    for (const row of pts) for (const p of row) push(p);
+    push([m.cx, m.profile === 'mesa' ? H : H + 2, m.cz]);
+    const at = (r, j) => base + r * seg + (j % seg);
     for (let r = 0; r + 1 < pts.length; r++) {
-      for (let j = 0; j < seg; j++) {
-        const a = pts[r][j], b = pts[r][(j + 1) % seg], c = pts[r + 1][(j + 1) % seg], d = pts[r + 1][j];
-        kitTri(kit, a, d, c, colorFn);
-        kitTri(kit, a, c, b, colorFn);
-      }
+      for (let j = 0; j < seg; j++) kit.idx.push(at(r, j), at(r + 1, j), at(r + 1, j + 1), at(r, j), at(r + 1, j + 1), at(r, j + 1));
     }
-    // cap
-    const last = pts[pts.length - 1];
-    const top = [m.cx, m.profile === 'mesa' ? H : H * 1.0 + 2, m.cz];
-    for (let j = 0; j < seg; j++) kitTri(kit, last[j], top, last[(j + 1) % seg], colorFn);
+    const top = base + pts.length * seg, last = pts.length - 1;
+    for (let j = 0; j < seg; j++) kit.idx.push(at(last, j), top, at(last, j + 1));
   }
 
   // ------------------------------------------------------------------ per-frame
@@ -651,7 +672,7 @@ export class CityMeshes {
     if (this.cloth) {
       this.cloth.position.y = Math.sin(time * 0.1) * 2;
       this.cloth.position.z = Math.sin(time * 0.05) * 4;
-      this.cloth.material.opacity = 0.62 + Math.sin(time * 0.07) * 0.08;
+      this.cloth.material.opacity = 0.84 + Math.sin(time * 0.07) * 0.06;
     }
   }
 }
@@ -668,21 +689,4 @@ const FACADE_SPEC = {
 const _ca = new THREE.Color(), _cb = new THREE.Color();
 function colLerp(a, b, t) {
   return _ca.set(a).clone().lerp(_cb.set(b), clamp(t, 0, 1));
-}
-
-function kitTri(kit, a, b, c, colorFn) {
-  // triangle with per-vertex colour
-  const base = kit.count;
-  const ax = b[0] - a[0], ay = b[1] - a[1], az = b[2] - a[2];
-  const bx = c[0] - a[0], by = c[1] - a[1], bz = c[2] - a[2];
-  let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
-  const l = Math.hypot(nx, ny, nz) || 1;
-  for (const p of [a, b, c]) {
-    kit.pos.push(p[0], p[1], p[2]);
-    kit.nor.push(nx / l, ny / l, nz / l);
-    const cc = colorFn(p[0], p[1], p[2]);
-    kit.col.push(cc.r, cc.g, cc.b);
-  }
-  kit.idx.push(base, base + 1, base + 2);
-  kit.count += 3;
 }

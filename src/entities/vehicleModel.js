@@ -191,33 +191,6 @@ function carBlobMat() {
   return _blob;
 }
 
-/** Ink hull for instanced meshes: pushed out in the wheel's own (unit) space, then placed per instance. */
-function instancedInk(color, width) {
-  return new THREE.ShaderMaterial({
-    vertexShader: `uniform float uWidth;
-      #include <common>
-      #include <fog_pars_vertex>
-      void main() {
-        vec4 p = vec4(position + normal * uWidth, 1.0);
-        #ifdef USE_INSTANCING
-          p = instanceMatrix * p;
-        #endif
-        vec4 mvPosition = modelViewMatrix * p;
-        gl_Position = projectionMatrix * mvPosition;
-        #include <fog_vertex>
-      }`,
-    fragmentShader: `uniform vec3 uColor;
-      #include <common>
-      #include <fog_pars_fragment>
-      void main() { gl_FragColor = vec4(uColor, 1.0);
-        #include <fog_fragment>
-      }`,
-    side: THREE.BackSide,
-    fog: true,
-    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uColor: { value: new THREE.Color(color) }, uWidth: { value: width } }]),
-  });
-}
-
 /** One instanced mesh for every wheel in the city (plus one for their ink outlines). */
 export class WheelPool {
   constructor(scene, max = 200) {
@@ -233,7 +206,7 @@ export class WheelPool {
     cap.rotateZ(Math.PI / 2);
     k.add(cap, { color: '#8a8f96' });
     this.mesh = new THREE.InstancedMesh(k.build(), vcMaterial(), max);
-    this.ink = new THREE.InstancedMesh(tyre, instancedInk('#2a1d17', 0.12), max);
+    this.ink = new THREE.InstancedMesh(tyre, outlineMaterial('#2a1d17', 0.12), max);
     this.free = [];
     for (let i = max - 1; i >= 0; i--) this.free.push(i);
     this.zero = new THREE.Matrix4().makeScale(0, 0, 0);

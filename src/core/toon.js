@@ -18,14 +18,18 @@ export const RAMP_SOFT = gradient([130, 185, 235, 255]);
 
 export const toon = (o = {}) => new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: o.soft ? RAMP_SOFT : RAMP, ...o, soft: undefined });
 
-/** Ink outline: the back faces of the mesh, pushed out along the normals. */
+/** Ink outline: the back faces of the mesh, pushed out along the normals (works on instanced meshes too). */
 export function outlineMaterial(color = '#2a1e1a', width = 0.035) {
   return new THREE.ShaderMaterial({
     vertexShader: `uniform float uWidth;
       #include <common>
       #include <fog_pars_vertex>
       void main() {
-        vec4 mvPosition = modelViewMatrix * vec4(position + normal * uWidth, 1.0);
+        vec4 p = vec4(position + normal * uWidth, 1.0);
+        #ifdef USE_INSTANCING
+          p = instanceMatrix * p; // pushed out in the instance's own space, then placed
+        #endif
+        vec4 mvPosition = modelViewMatrix * p;
         gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
       }`,

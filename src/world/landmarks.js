@@ -2,10 +2,22 @@
 
 import * as THREE from 'three';
 import { MeshKit, GEO, vcMaterial } from '../core/meshkit.js';
+import { RAMP_SOFT, outlineMaterial } from '../core/toon.js';
 import { POI, PLATEAU } from './mapData.js';
 import { T } from './grid.js';
 import { RNG } from '../core/util.js';
 import { makeSignTexture, makeStripesTexture, makeClockTexture, makeMuralTexture, makeGlowTexture } from './textures.js';
+
+const toonM = (o) => new THREE.MeshToonMaterial({ gradientMap: RAMP_SOFT, ...o });
+const INK = new THREE.MeshBasicMaterial({ color: '#2a1d17', side: THREE.BackSide });
+/** Cartoon outline for a closed mesh centred on its origin: a slightly bigger copy drawn back faces only. */
+function inkShell(mesh, pad = 0.04) {
+  const o = new THREE.Mesh(mesh.geometry, INK);
+  o.scale.setScalar(1 + pad);
+  o.raycast = () => {};
+  mesh.add(o);
+  return o;
+}
 
 export class Landmarks {
   constructor(root, grid, city) {
@@ -48,6 +60,9 @@ export class Landmarks {
     mesh.name = 'landmarks';
     mesh.castShadow = true;
     mesh.receiveShadow = true;
+    const ink = new THREE.Mesh(mesh.geometry, outlineMaterial('#2a1d17', 0.09));
+    ink.raycast = () => {};
+    mesh.add(ink);
     this.root.add(mesh);
   }
 
@@ -119,9 +134,10 @@ export class Landmarks {
     const { x, z } = POI.lighthouse;
     const tex = makeStripesTexture('#d6362b', '#f7f7f2', 7, true);
     tex.repeat.set(1, 1.5);
-    const tower = new THREE.Mesh(new THREE.BoxGeometry(5, 16, 5), new THREE.MeshLambertMaterial({ map: tex }));
+    const tower = new THREE.Mesh(new THREE.BoxGeometry(5, 16, 5), toonM({ map: tex }));
     tower.position.set(x, 8, z);
     tower.castShadow = true;
+    inkShell(tower, 0.03);
     this.root.add(tower);
     k.block(x, 16, z, 6, 0.4, 6, '#333');
     k.cyl(x, 16.4, z, 1.6, 2.2, '#ffe9a8', 8);
@@ -193,7 +209,7 @@ export class Landmarks {
     k.block(wx, 0, wz, 8, 0.8, 14, '#9e9a90');
     const wheel = new THREE.Group();
     wheel.position.set(wx, 19.5, wz);
-    const wmat = new THREE.MeshLambertMaterial({ color: '#f0f2f4' });
+    const wmat = toonM({ color: '#f0f2f4' });
     const rim = new THREE.Mesh(new THREE.TorusGeometry(16, 0.35, 6, 48), wmat);
     rim.rotation.y = Math.PI / 2;
     wheel.add(rim);
@@ -209,7 +225,7 @@ export class Landmarks {
     const gondolas = [];
     const gcols = ['#e74c3c', '#f1c40f', '#3498db', '#2ecc71', '#9b59b6', '#e67e22'];
     for (let i = 0; i < 18; i++) {
-      const g = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.8, 1.6), new THREE.MeshLambertMaterial({ color: gcols[i % gcols.length] }));
+      const g = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.8, 1.6), toonM({ color: gcols[i % gcols.length] }));
       this.root.add(g);
       gondolas.push(g);
     }
@@ -303,14 +319,16 @@ export class Landmarks {
     this.cableB = cabEnd;
     // rotating cabin
     const cab = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 2.6, 16), new THREE.MeshLambertMaterial({ color: '#d63a2f' }));
-    const glass = new THREE.Mesh(new THREE.CylinderGeometry(2.25, 2.25, 1.1, 16), new THREE.MeshLambertMaterial({ color: '#4c6a7a' }));
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 2.6, 16), toonM({ color: '#ec3f2f' }));
+    const glass = new THREE.Mesh(new THREE.CylinderGeometry(2.25, 2.25, 1.1, 16), toonM({ color: '#4c6a7a' }));
     glass.position.y = 0.4;
-    const roof = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.2, 0.6, 16), new THREE.MeshLambertMaterial({ color: '#f2f2f2' }));
+    const roof = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 2.2, 0.6, 16), toonM({ color: '#f2f2f2' }));
     roof.position.y = 1.6;
-    const hanger = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.4, 0.2), new THREE.MeshLambertMaterial({ color: '#444' }));
+    const hanger = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.4, 0.2), toonM({ color: '#444' }));
     hanger.position.y = 3;
     cab.add(body, glass, roof, hanger);
+    inkShell(body, 0.05);
+    inkShell(roof, 0.06);
     this.root.add(cab);
     this.cabin = cab;
     this.cabinT = 0;
@@ -365,15 +383,18 @@ export class Landmarks {
 
   stadium(k) {
     const { x, z } = POI.stadium;
-    const outer = new THREE.Mesh(new THREE.CylinderGeometry(46, 44, 24, 48, 1, true), new THREE.MeshLambertMaterial({ color: '#eef0ef' }));
+    const outer = new THREE.Mesh(new THREE.CylinderGeometry(46, 44, 24, 48, 1, true), toonM({ color: '#ffffff' }));
     outer.position.set(x, 12, z);
     outer.castShadow = true;
     this.root.add(outer);
-    const inner = new THREE.Mesh(new THREE.CylinderGeometry(40, 28, 20, 48, 1, true), new THREE.MeshLambertMaterial({ color: '#b03a3a', side: THREE.BackSide }));
+    const shell = new THREE.Mesh(new THREE.CylinderGeometry(47.1, 45.1, 25, 48), INK);
+    shell.position.set(x, 12, z);
+    this.root.add(shell);
+    const inner = new THREE.Mesh(new THREE.CylinderGeometry(40, 28, 20, 48, 1, true), toonM({ color: '#e0473c', side: THREE.BackSide }));
     inner.position.set(x, 12, z);
     this.root.add(inner);
     k.cyl(x, 0, z, 28.5, 2.2, '#3f8f3a', 24);
-    const roof = new THREE.Mesh(new THREE.RingGeometry(30, 46.5, 48), new THREE.MeshLambertMaterial({ color: '#f7f7f7', transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+    const roof = new THREE.Mesh(new THREE.RingGeometry(30, 46.5, 48), toonM({ color: '#f7f7f7', transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
     roof.rotation.x = -Math.PI / 2;
     roof.position.set(x, 24.2, z);
     this.root.add(roof);
@@ -385,24 +406,18 @@ export class Landmarks {
 
   castle() {
     const { x, z } = POI.castle;
-    const outer = [], inner = [];
-    for (let i = 0; i < 5; i++) {
-      const a = 0.3 + (i / 5) * Math.PI * 2;
-      outer.push(new THREE.Vector2(x + Math.cos(a) * 27, -(z + Math.sin(a) * 27)));
-      inner.push(new THREE.Vector2(x + Math.cos(a) * 20, -(z + Math.sin(a) * 20)));
-    }
-    const shape = new THREE.Shape(outer);
-    shape.holes.push(new THREE.Path(inner));
-    const g = new THREE.ExtrudeGeometry(shape, { depth: 9, bevelEnabled: false });
-    g.rotateX(-Math.PI / 2);
-    const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: '#d8b25e' }));
-    m.castShadow = m.receiveShadow = true;
-    this.root.add(m);
+    // pentagon of curtain walls (the five bastions sit on the corners)
     const k = this.kit;
+    const R = 23.5, side = 2 * R * Math.sin(Math.PI / 5);
+    for (let i = 0; i < 5; i++) {
+      const a0 = 0.3 + (i / 5) * Math.PI * 2, a1 = 0.3 + ((i + 1) / 5) * Math.PI * 2;
+      const mx = x + ((Math.cos(a0) + Math.cos(a1)) / 2) * R, mz = z + ((Math.sin(a0) + Math.sin(a1)) / 2) * R;
+      k.block(mx, 0, mz, side + 3, 9, 7, '#f0c45a', { ry: -(a0 + a1) / 2 + Math.PI / 2 });
+    }
     k.cyl(x, 0, z, 19.5, 0.05, '#c9b89a', 24);
     for (let i = 0; i < 5; i++) {
       const a = 0.3 + (i / 5) * Math.PI * 2;
-      k.add(GEO.cone4, { x: x + Math.cos(a) * 28, y: 4.5, z: z + Math.sin(a) * 28, sx: 9, sy: 9, sz: 9, rx: 0, ry: -a + Math.PI / 4, color: '#cfa955' });
+      k.add(GEO.cone4, { x: x + Math.cos(a) * 28, y: 4.5, z: z + Math.sin(a) * 28, sx: 9, sy: 9, sz: 9, rx: 0, ry: -a + Math.PI / 4, color: '#e6b04c' });
     }
     k.block(x, 0, z, 10, 6, 8, '#e3cf9f');
     k.cyl(x - 22, 9, z + 3, 0.08, 6, '#ccc', 6);
@@ -467,7 +482,7 @@ export class Landmarks {
       });
       if (!f || f.w < 8) continue;
       const w = Math.min(f.w * 0.85, 22), h = Math.min(b.h * 0.8, w / 2);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: makeMuralTexture(rng.int(1, 9999)) }));
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), toonM({ map: makeMuralTexture(rng.int(1, 9999)) }));
       m.position.set(f.x, h / 2 + 0.4, f.z);
       m.rotation.y = f.ry;
       this.root.add(m);
