@@ -86,3 +86,20 @@ export const MOVES = {
 };
 
 export const COMBO = ['jab', 'cross', 'kick'];
+
+// two-handed overhead bat swing (gang members with a bat)
+MOVES.bat = {
+  dur: 0.6, hit: 0.3, reach: 1.5, heavy: true,
+  keys: [
+    { t: 0 },
+    { t: 0.22, p: { 'armR.sx': -2.7, 'armR.sz': 0.3, 'armR.ex': -1.2, 'armL.sx': -2.6, 'armL.sz': -0.3, 'armL.ex': -1.3, 'torso.ry': 0.55, 'torso.rx': -0.15, 'hips.ry': -0.2 } },
+    { t: 0.32, ease: 'snap', p: { 'armR.sx': -0.9, 'armR.sz': 0.25, 'armR.ex': -0.2, 'armL.sx': -0.85, 'armL.sz': -0.25, 'armL.ex': -0.25, 'torso.ry': -0.35, 'torso.rx': 0.35, 'hips.ry': 0.1, 'legL.kx': 0.6 } },
+    { t: 0.6 },
+  ],
+};
+
+// Falling over and getting up, cut from the knockdown so all three line up exactly.
+const KD = MOVES.knockdown.keys;
+MOVES.fall = { dur: 0.7, keys: KD.filter((k) => k.t <= 0.7) };
+MOVES.getup = { dur: 1.2, keys: KD.filter((k) => k.t >= 1.8).map((k) => ({ ...k, t: k.t - 1.8 })) };
+export const LYING_T = 1.8; // time in the knockdown where the body lies still

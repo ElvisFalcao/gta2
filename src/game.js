@@ -477,7 +477,8 @@ export class Game {
     if (!this.started) {
       this.titleUpdate(dt);
       this.input.endFrame();
-    } else if (!this.paused) this.update(dt);
+    } else if (this.testFreeze) this.input.endFrame(); // tests step the game with simulate() and only render here
+    else if (!this.paused) this.update(dt);
     else {
       this.menu.handleInput(this.input, dt);
       this.input.endFrame();
@@ -537,9 +538,15 @@ export class Game {
 
     if (!this.cutscene) this.env.advance(dt);
     this.signals.update(dt);
-    p.update(dt, input);
+    // hit-stop: fighters (player and people) nearly freeze for a moment when a punch lands
+    let fdt = dt;
+    if (this.hitstop > 0) {
+      this.hitstop -= dt;
+      fdt = dt * 0.04;
+    }
+    p.update(fdt, input);
     this.vehicles.update(dt);
-    this.peds.update(dt);
+    this.peds.update(fdt);
     this.police.update(dt);
     this.population.update(dt);
     this.missions.update(dt);

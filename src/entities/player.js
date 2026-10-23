@@ -5,12 +5,13 @@ import { clamp, damp, turnTowards, headingTo, wrapAngle, dist } from '../core/ut
 import { T } from '../world/grid.js';
 import { PLATEAU } from '../world/mapData.js';
 
+// timings match the keyframed moves in moves.js: punchL = jab, punchR = cross, kick = roundhouse
 const ATTACKS = {
-  punchR: { dur: 0.34, hitAt: 0.12, range: 1.55, dmg: 11, kind: 'light' },
-  punchL: { dur: 0.34, hitAt: 0.12, range: 1.55, dmg: 11, kind: 'light' },
-  kick: { dur: 0.55, hitAt: 0.24, range: 1.9, dmg: 19, kind: 'heavy' },
+  punchL: { dur: 0.36, hitAt: 0.11, range: 1.55, dmg: 10, kind: 'light' },
+  punchR: { dur: 0.46, hitAt: 0.16, range: 1.6, dmg: 13, kind: 'light' },
+  kick: { dur: 0.78, hitAt: 0.34, range: 1.9, dmg: 19, kind: 'heavy' },
 };
-const COMBO = ['punchR', 'punchL', 'kick'];
+const COMBO = ['punchL', 'punchR', 'kick'];
 
 export class Player {
   constructor(game) {
@@ -36,6 +37,9 @@ export class Player {
     this.comboT = 0;
     this.queued = false;
     this.downT = 0;
+    this.downE = 0;
+    this.guardT = 0;
+    this.guard = false;
     this.lastDamageT = -99;
     this.invulnT = 0;
     this.onPlateau = false;
@@ -97,7 +101,8 @@ export class Player {
     this.comboT -= dt;
     this.invulnT -= dt;
     if (this.state === 'dead') {
-      this.rig.animate(dt, { mode: 'down' });
+      this.downE += dt;
+      this.rig.animate(dt, { mode: 'down', elapsed: this.downE });
       return;
     }
     if (this.state === 'vehicle') {
@@ -106,11 +111,12 @@ export class Player {
     }
     if (this.state === 'down') {
       this.downT -= dt;
+      this.downE += dt;
       this.vx = damp(this.vx, 0, 4, dt);
       this.vz = damp(this.vz, 0, 4, dt);
       this.tryMove(this.vx * dt, this.vz * dt);
       this.y = this.groundAt(this.x, this.z);
-      this.rig.animate(dt, { mode: 'down' });
+      this.rig.animate(dt, { mode: 'down', elapsed: this.downE, remaining: this.downT });
       this.syncRig();
       if (this.downT <= 0) this.state = 'foot';
       return;
@@ -180,6 +186,13 @@ export class Player {
     if (!this.locked && !this.anim && !this.swimming && input.pressed('attack')) this.startAttack();
     if (this.attack) this.updateAttack(dt);
 
+    // fighting stance when someone hostile is close (checked a few times a second)
+    this.guardT -= dt;
+    if (this.guardT <= 0) {
+      this.guardT = 0.25;
+      this.guard = !this.swimming && g.peds.list.some((q) => q.hostile && Math.abs(q.x - this.x) < 7 && Math.abs(q.z - this.z) < 7);
+    }
+
     // health regen
     if (g.time - this.lastDamageT > 6 && this.health < this.maxHealth) this.health = Math.min(this.maxHealth, this.health + 2.5 * dt);
 
@@ -187,7 +200,7 @@ export class Player {
     const a = this.attack;
     if (this.anim) this.rig.animate(dt, { mode: this.anim.mode, liftP: this.anim.liftP });
     else if (this.swimming) this.rig.animate(dt, { mode: 'swim' });
-    else this.rig.animate(dt, { speed: this.speedNow, airborne: this.airborne, action: a ? a.type : null, actionT: a ? a.t / a.spec.dur : 0, carry: this.carry });
+    else this.rig.animate(dt, { speed: this.speedNow, airborne: this.airborne, action: a ? a.type : null, actionT: a ? a.t / a.spec.dur : 0, carry: this.carry, guard: (this.guard || !!a) && this.speedNow < 4.5 });
     this.rig.setMuscle(1 + this.muscle / 100 * 0.32);
     this.syncRig();
   }
@@ -211,7 +224,7 @@ export class Player {
     // auto-aim at nearest valid target
     const tgt = this.game.peds.bestMeleeTarget(this.x, this.z, this.heading, 3.4);
     if (tgt) this.heading = headingTo(this.x, this.z, tgt.x, tgt.z);
-    this.attack = { type, spec, t: 0, hit: false };
+    this.attack = { type, spec, t: 0, hit: false, target: tgt };
     this.game.audio.whoosh();
   }
 
@@ -223,8 +236,16 @@ export class Player {
       const mult = 1 + (this.muscle / 100) * 0.9;
       const landed = this.game.peds.meleeFrom(this, a.spec.range, a.spec.dmg * mult, a.spec.kind, 70);
       if (landed) {
-        this.game.audio.punch(a.type === 'kick');
-        this.game.cameraRig.shake(a.type === 'kick' ? 0.25 : 0.12);
+        const heavy = a.type === 'kick', g = this.game;
+        g.audio.punch(heavy);
+        g.cameraRig.shake(heavy ? 0.25 : 0.12);
+        g.hitstop = heavy ? 0.13 : 0.07; // freeze the fighters for a beat so the hit lands
+        g.vibrate(heavy ? 60 : 30);
+        // comic burst where fist / foot meets the target
+        const t = a.target && a.target.state !== 'dead' ? a.target : null;
+        const fx = t ? (this.x + t.x) / 2 : this.x + Math.sin(this.heading) * 0.9;
+        const fz = t ? (this.z + t.z) / 2 : this.z + Math.cos(this.heading) * 0.9;
+        g.effects.pow(fx, this.y + (heavy ? 1.05 : 1.45), fz, heavy);
       }
       // punching cars dents them a little
       const v = this.game.vehicles.nearest(this.x, this.z, 2.2);
@@ -255,8 +276,9 @@ export class Player {
     this.vz += dirZ * push;
     this.attack = null;
     if ((kind === 'heavy' && Math.random() < 0.45) || kind === 'car' || kind === 'explosion') {
+      if (this.state !== 'down') this.downE = 0;
       this.state = 'down';
-      this.downT = kind === 'car' ? 1.6 : 1.1;
+      this.downT = kind === 'car' ? 2.1 : 1.8;
       this.invulnT = 0.5;
     }
     this.game.effects.hit(this.x, this.y + 1.3, this.z);
@@ -279,6 +301,7 @@ export class Player {
 
   die(cause) {
     if (this.vehicle) this.exitVehicle(true);
+    if (this.state !== 'down') this.downE = 0;
     this.state = 'dead';
     this.attack = null;
     this.game.onPlayerWasted(cause);
@@ -346,7 +369,8 @@ export class Player {
       this.vx = v.vx * 0.5;
       this.vz = v.vz * 0.5;
       this.state = 'down';
-      this.downT = 1.2;
+      this.downT = 1.8;
+      this.downE = 0;
       this.takeDamage(Math.min(20, sp * 0.4), 'bail');
     }
   }

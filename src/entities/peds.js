@@ -41,7 +41,9 @@ export class Ped {
     this.tough = o.tough ?? (this.kind === 'civ' && chance(0.2));
     this.state = 'ok'; // ok | down | dead
     this.downT = 0;
+    this.downE = 0;
     this.deadT = 0;
+    this.deadE = 0;
     this.hitT = 0;
     this.attack = null;
     this.attackCD = rand(0.6, 1.4);
@@ -72,7 +74,7 @@ export class Ped {
 
   giveBat() {
     const bat = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.07, 0.95, 6), new THREE.MeshLambertMaterial({ color: '#7a5230' }));
-    bat.position.set(-0.31, 0.62, 0.35);
+    bat.position.set(0, -0.08, 0.32); // held in the right hand, pointing forward
     bat.rotation.x = Math.PI / 2;
     this.rig.b.armR.add(bat);
   }
@@ -140,17 +142,19 @@ export class Ped {
     this.attackCD -= dt;
     if (this.state === 'dead') {
       this.deadT -= dt;
-      this.rig.animate(dt, { mode: 'down' });
+      this.deadE += dt;
+      this.rig.animate(dt, { mode: 'down', elapsed: this.deadE });
       if (this.deadT < 1.5) this.rig.group.position.y = this.y - (1.5 - this.deadT) * 0.4;
       if (this.deadT <= 0 && !this.mission) this.removeMe = true;
       return;
     }
     if (this.state === 'down') {
       this.downT -= dt;
+      this.downE += dt;
       this.vx = damp(this.vx, 0, 3.5, dt);
       this.vz = damp(this.vz, 0, 3.5, dt);
       this.tryMove(this.vx * dt, this.vz * dt);
-      this.rig.animate(dt, { mode: 'down' });
+      this.rig.animate(dt, { mode: 'down', elapsed: this.downE, remaining: this.downT });
       this.sync();
       if (this.downT <= 0) {
         this.state = 'ok';
@@ -191,7 +195,7 @@ export class Ped {
     this.y = this.groundAt(this.x, this.z);
     this.speedNow = Math.hypot(this.vx, this.vz);
     if (this.isDog) this.rig.animate(dt, { speed: this.speedNow, sit: mode === 'sit' });
-    else this.rig.animate(dt, { speed: this.speedNow, mode: action ? null : mode, action, actionT });
+    else this.rig.animate(dt, { speed: this.speedNow, mode: action ? null : mode, action, actionT, guard: this.state === 'ok' && (this.ai === 'fight' || (this.kind === 'police' && this.ai === 'chase' && this.speedNow < 2)) && !!this.target });
     this.sync();
   }
 
@@ -434,8 +438,9 @@ export class Ped {
       return;
     }
     if (kind === 'car' || kind === 'explosion' || (kind === 'heavy' && chance(0.45))) {
+      if (this.state !== 'down') this.downE = 0;
       this.state = 'down';
-      this.downT = kind === 'car' ? 2.5 : 1.4;
+      this.downT = kind === 'car' ? 2.8 : 2.2; // fall, lie dazed, get up
     }
     if (this.kind === 'civ' && byPlayer) {
       if (this.tough && kind !== 'car' && !this.noFight) {
@@ -454,6 +459,7 @@ export class Ped {
   }
 
   knockOut(kind) {
+    this.deadE = this.state === 'down' ? this.downE : 0; // already on the ground: don't fall again
     this.state = 'dead';
     this.health = 0;
     this.deadT = this.mission ? 9999 : 14;
@@ -611,7 +617,8 @@ export class PedSystem {
     const p = this.spawn(o.x, o.z, { kind: 'civ', look: v.npcLook || undefined, ai: 'flee' });
     p.startFlee(this.game.player.x, this.game.player.z, 10);
     p.state = 'down';
-    p.downT = 0.6;
+    p.downT = 1.6;
+    p.downE = 0;
     v.driver = null;
     v.ai = null;
     v.npcLook = null;

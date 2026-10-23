@@ -3,8 +3,8 @@
 // so a person is ~8 draw calls and animates by rotating pivots (no skinning).
 
 import * as THREE from 'three';
-import { toon, outlineMaterial, inked, roundedBox, SHAPES, Merger, faceTexture, RAMP } from './toon.js';
-import { GUARD, MOVES } from './moves.js';
+import { toon, outlineMaterial, inked, roundedBox, SHAPES, Merger, faceTexture, RAMP } from '../core/toon.js';
+import { GUARD, MOVES } from '../entities/moves.js';
 
 const INK = outlineMaterial('#2a1c16', 0.022);
 const MAT = toon();

@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { buildStreet } from './street.js';
 import { Person, LOOKS } from './people.js';
-import { COMBO } from './moves.js';
+import { COMBO } from '../entities/moves.js';
 
 const PRESETS = {
   golden: {

@@ -93,6 +93,20 @@ export class Effects {
     this.time = 0;
   }
 
+  /** Comic impact burst ("POW!") that pops in, wobbles and fades. */
+  pow(x, y, z, heavy = false) {
+    const words = heavy ? ['KAPOW!', 'WHAM!'] : ['POW!', 'BAM!', 'WHAP!'];
+    const word = words[Math.floor(Math.random() * words.length)];
+    if (!this.powTex) this.powTex = {};
+    if (!this.powTex[word]) this.powTex[word] = makePowTexture(word, heavy);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.powTex[word], transparent: true, depthTest: false }));
+    s.position.set(x, y, z);
+    s.renderOrder = 10;
+    this.scene.add(s);
+    this.pows = this.pows || [];
+    this.pows.push({ s, t: 0, size: heavy ? 1.25 : 0.85 });
+  }
+
   smoke(x, y, z, n = 1, dark = 0.4) {
     for (let i = 0; i < n; i++) this.pools.smoke.emit(x + rand(-0.4, 0.4), y, z + rand(-0.4, 0.4), rand(-0.6, 0.6), rand(1, 2.2), rand(-0.6, 0.6), rand(1.4, 2.6), dark, dark, dark * 1.02);
   }
@@ -196,6 +210,21 @@ export class Effects {
 
   update(dt) {
     this.time += dt;
+    if (this.pows) {
+      for (let i = this.pows.length - 1; i >= 0; i--) {
+        const f = this.pows[i];
+        f.t += dt;
+        const pop = f.t < 0.08 ? f.t / 0.08 : 1 + Math.sin(f.t * 20) * 0.04 * Math.max(0, 1 - f.t * 3);
+        f.s.scale.setScalar(f.size * pop * (1 + f.t * 0.3));
+        f.s.material.opacity = Math.max(0, 1 - Math.max(0, f.t - 0.3) / 0.25);
+        f.s.position.y += dt * 0.3;
+        if (f.t > 0.6) {
+          this.scene.remove(f.s);
+          f.s.material.dispose();
+          this.pows.splice(i, 1);
+        }
+      }
+    }
     for (const p of Object.values(this.pools)) p.update(dt);
     for (let i = this.flashes.length - 1; i >= 0; i--) {
       const f = this.flashes[i];
@@ -220,4 +249,33 @@ export class Effects {
       if (m.spr) m.spr.position.y = m.cyl.geometry.parameters.height + 1 + Math.sin(this.time * 2.5 + m.phase) * 0.2;
     }
   }
+}
+
+function makePowTexture(word, heavy) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.translate(128, 128);
+  g.beginPath();
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2, r = i % 2 ? 70 : 112 + ((i * 37) % 13);
+    g.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  g.closePath();
+  g.fillStyle = heavy ? '#ff5a3c' : '#ffd23f';
+  g.strokeStyle = '#1b1410';
+  g.lineWidth = 10;
+  g.fill();
+  g.stroke();
+  g.rotate(-0.15);
+  g.font = `${heavy ? 62 : 58}px "Bebas Neue", Impact, sans-serif`;
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.lineWidth = 9;
+  g.strokeText(word, 0, 4);
+  g.fillStyle = '#ffffff';
+  g.fillText(word, 0, 4);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }

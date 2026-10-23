@@ -3,7 +3,7 @@
 // with layered, hazy mountains (Signal Hill, Lion's Head, Table Mountain + tablecloth) behind.
 
 import * as THREE from 'three';
-import { toon, outlineMaterial, inked, roundedBox, SHAPES, Merger, canvasTex, cobbleTexture, signTexture, muralTexture } from './toon.js';
+import { toon, outlineMaterial, inked, roundedBox, SHAPES, Merger, canvasTex, cobbleTexture, signTexture, muralTexture } from '../core/toon.js';
 
 const INK_BUILD = outlineMaterial('#2b1d18', 0.05);
 const INK_PROP = outlineMaterial('#2b1d18', 0.03);
