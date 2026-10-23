@@ -83,8 +83,6 @@ const sisi = new Person(LOOKS.sisi);
 sisi.root.position.set(6, 0.2, -4.6);
 for (const p of [sizwe, aunty, oom, sisi]) scene.add(p.root);
 // oom sits on the bench
-oom.hips.position.y = 0.58;
-for (const l of oom.legs) l.rotation.x = -1.45;
 
 let preset = 'golden';
 function applyPreset(name) {
@@ -185,8 +183,12 @@ renderer.domElement.addEventListener('wheel', (e) => {
   cam.dist = THREE.MathUtils.clamp(cam.dist * (e.deltaY > 0 ? 1.1 : 0.9), 3, 40);
 }, { passive: false });
 document.querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => applyPreset(b.dataset.preset)));
-let touring = false, autoWalk = true;
-document.getElementById('ld-tour').addEventListener('click', () => (touring = !touring));
+let touring = false, autoWalk = true, autoRun = false;
+document.getElementById('ld-tour').addEventListener('click', (e) => e.currentTarget.classList.toggle('on', (touring = !touring)));
+document.getElementById('ld-run').addEventListener('click', (e) => {
+  autoWalk = true;
+  e.currentTarget.classList.toggle('on', (autoRun = !autoRun));
+});
 window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -199,7 +201,7 @@ const fpsEl = document.getElementById('ld-fps');
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  step(dt);
+  if (!window.__ldPaused) step(dt); // tests pause the loop and pose characters themselves
   renderer.render(scene, camera);
   fps = fps * 0.95 + (dt > 0 ? 1 / dt : 60) * 0.05;
   if (fpsEl) fpsEl.textContent = `${Math.round(fps)} fps`;
@@ -218,13 +220,14 @@ function step(dt) {
     const f = new THREE.Vector3(Math.sin(cam.yaw), 0, Math.cos(cam.yaw)).multiplyScalar(-1);
     const r = new THREE.Vector3(-f.z, 0, f.x);
     const dir = f.multiplyScalar(my).add(r.multiplyScalar(-mx));
-    const run = keys.has('ShiftLeft') ? 2 : 1;
-    speed = Math.min(1, dir.length()) * 1.6 * run;
+    const push = Math.min(1, dir.length());
+    const run = keys.has('ShiftLeft') || keys.has('ShiftRight') || Math.hypot(stick.x, stick.y) > 0.95;
+    speed = run ? 3.6 : push * 1.5;
     dir.normalize();
     sizwe.root.position.addScaledVector(dir, speed * dt);
     sizwe.root.rotation.y = Math.atan2(dir.x, dir.z);
   } else if (autoWalk) {
-    speed = 1.3;
+    speed = autoRun ? 3.6 : 1.35;
     sizwe.root.position.x += walkDir * speed * dt;
     if (sizwe.root.position.x > 14) walkDir = -1;
     if (sizwe.root.position.x < -18) walkDir = 1;
@@ -237,11 +240,10 @@ function step(dt) {
   sizwe.update(dt, { speed });
   aunty.update(dt, { wave: Math.sin(time * 0.5) > 0.2 });
   aunty.root.rotation.y = 0.3 + Math.sin(time * 0.4) * 0.2;
-  oom.update(dt, {});
-  for (const l of oom.legs) l.rotation.x = -1.45;
+  oom.update(dt, { pose: 'sit' });
   sisi.root.position.x = 6 + Math.sin(time * 0.15) * 10;
   sisi.root.rotation.y = Math.cos(time * 0.15) > 0 ? Math.PI / 2 : -Math.PI / 2;
-  sisi.update(dt, { speed: Math.abs(Math.cos(time * 0.15)) * 1.5 + 0.2 });
+  sisi.update(dt, { speed: Math.abs(Math.cos(time * 0.15)) * 1.5 });
   // ambient life: hadedas bob, washing sways, taxi idles
   street.birds.forEach((b, i) => (b.rotation.z = Math.sin(time * 2 + i) * 0.08));
   street.clothes.forEach((c, i) => (c.rotation.x = Math.sin(time * 1.7 + i * 0.7) * 0.18));
@@ -264,5 +266,5 @@ function step(dt) {
 }
 
 applyPreset(new URLSearchParams(location.search).get('mood') || 'golden');
-window.__ld = { scene, camera, cam, sizwe, applyPreset, step, renderer, setAutoWalk: (v) => (autoWalk = v) };
+window.__ld = { scene, camera, cam, sizwe, aunty, oom, sisi, applyPreset, step, renderer, setAutoWalk: (v) => (autoWalk = v) };
 requestAnimationFrame(frame);

@@ -61,6 +61,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - Run `npm run playthrough` after changes to check all 10 missions still complete.
 
 ## Log
+- 2026-10-23 · Claude Code · Look test: characters now bend at elbows, wrists, knees and ankles, with a real walk and run cycle, idle weight shifts, an elbow wave and a proper sitting pose; `tools/lookdev-anim.mjs` makes filmstrips.
 - 2026-10-23 · Claude Code · Look test for art direction A (sunny toon): `lookdev.html` + `src/lookdev/` — toon shading, ink outlines, rounded characters with painted faces, Bo-Kaap street, golden hour / midday / night.
 - 2026-10-22 · Claude Code · Mobile: compact icon touch buttons sized for small phones, GAS/BRAKE pedals, joystick resting ring; installable app (icons, manifest, service worker, iPhone Add to Home Screen hint, offline); compact title screen on short screens.
 - 2026-10-22 · Claude Code · AI placeholder voices for the 303 first-pass street lines (Kokoro, generated locally; real recordings override them); generator in tools/voice-gen.

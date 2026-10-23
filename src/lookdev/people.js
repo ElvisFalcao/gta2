@@ -93,55 +93,150 @@ export class Person {
     this.head.add(inked(hd.build(), MAT, INK));
     this.torso.add(this.head);
 
-    // arms: pivot at the shoulder, sleeve + forearm + hand
-    this.arms = [-1, 1].map((s) => {
-      const g = new THREE.Group();
-      g.position.set(s * (tw / 2 + 0.05), th - 0.04, 0);
+    // arms: shoulder -> upper arm -> elbow -> forearm -> wrist -> hand
+    const part = (build) => {
       const m = new Merger();
-      const sleeve = L.sleeves === 'long' ? 0.42 : 0.2;
-      m.add(SHAPES.capsule, L.shirt, { y: -sleeve / 2, sx: 0.13, sy: sleeve / 1.2, sz: 0.13 });
-      if (sleeve < 0.4) m.add(SHAPES.capsule, L.skin, { y: -0.3, sx: 0.1, sy: 0.18, sz: 0.1 });
-      m.add(SHAPES.sphere, L.skin, { y: -0.5, sx: 0.13, sy: 0.13, sz: 0.13 });
-      g.add(inked(m.build(), MAT, INK));
-      g.rotation.z = s * 0.08;
-      this.torso.add(g);
-      return g;
+      build(m);
+      return inked(m.build(), MAT, INK);
+    };
+    const UPPER = 0.27, FORE = 0.25;
+    this.arms = [-1, 1].map((s) => {
+      const shoulder = new THREE.Group();
+      shoulder.position.set(s * (tw / 2 + 0.05), th - 0.04, 0);
+      shoulder.add(part((m) => {
+        m.add(SHAPES.sphere, L.shirt, { sx: 0.15, sy: 0.15, sz: 0.15 }); // shoulder ball hides the joint
+        m.add(SHAPES.capsule, L.shirt, { y: -UPPER / 2, sx: 0.13, sy: UPPER / 1.5, sz: 0.13 });
+      }));
+      const elbow = new THREE.Group();
+      elbow.position.y = -UPPER;
+      elbow.add(part((m) => {
+        const sleeveCol = L.sleeves === 'long' ? L.shirt : L.skin;
+        m.add(SHAPES.sphere, sleeveCol, { sx: 0.12, sy: 0.12, sz: 0.12 });
+        m.add(SHAPES.capsule, sleeveCol, { y: -FORE / 2, sx: 0.11, sy: FORE / 1.6, sz: 0.11 });
+        if (L.sleeves === 'long') m.add(SHAPES.cyl, shade(L.shirt, 0.85), { y: -FORE + 0.02, sx: 0.12, sy: 0.04, sz: 0.12 }); // cuff
+      }));
+      const wrist = new THREE.Group();
+      wrist.position.y = -FORE;
+      wrist.add(part((m) => {
+        m.add(SHAPES.sphere, L.skin, { y: -0.05, sx: 0.12, sy: 0.13, sz: 0.1 });
+        m.add(SHAPES.sphereLo, L.skin, { x: s * -0.045, y: -0.03, z: 0.03, sx: 0.05, sy: 0.07, sz: 0.05 }); // thumb
+      }));
+      elbow.add(wrist);
+      shoulder.add(elbow);
+      this.torso.add(shoulder);
+      return { shoulder, elbow, wrist, side: s };
     });
 
-    // legs: pivot at the hip, trouser leg + takkie
+    // legs: hip -> thigh -> knee -> shin -> ankle -> takkie
+    const THIGH = 0.36, SHIN = 0.33;
     this.legs = [-1, 1].map((s) => {
-      const g = new THREE.Group();
-      g.position.set(s * 0.11 * b, 0.02, 0);
-      const m = new Merger();
-      m.add(SHAPES.capsule, L.pants, { y: -0.37, sx: 0.17, sy: 0.5, sz: 0.17 });
-      m.add(roundedBox(0.16, 0.11, 0.28, 0.05), L.shoe, { y: -0.72, z: 0.05 });
-      m.add(roundedBox(0.165, 0.035, 0.29, 0.015), L.sole, { y: -0.77, z: 0.05 });
-      g.add(inked(m.build(), MAT, INK));
-      this.hips.add(g);
-      return g;
+      const hip = new THREE.Group();
+      hip.position.set(s * 0.11 * b, 0.02, 0);
+      hip.add(part((m) => m.add(SHAPES.capsule, L.pants, { y: -THIGH / 2, sx: 0.18, sy: THIGH / 1.5, sz: 0.18 })));
+      const knee = new THREE.Group();
+      knee.position.y = -THIGH;
+      knee.add(part((m) => {
+        m.add(SHAPES.sphere, L.pants, { sx: 0.165, sy: 0.165, sz: 0.165 });
+        m.add(SHAPES.capsule, L.pants, { y: -SHIN / 2, sx: 0.155, sy: SHIN / 1.5, sz: 0.155 });
+      }));
+      const ankle = new THREE.Group();
+      ankle.position.y = -SHIN;
+      ankle.add(part((m) => {
+        m.add(roundedBox(0.16, 0.11, 0.28, 0.05), L.shoe, { y: -0.03, z: 0.05 });
+        m.add(roundedBox(0.165, 0.035, 0.29, 0.015), L.sole, { y: -0.08, z: 0.05 });
+      }));
+      knee.add(ankle);
+      hip.add(knee);
+      this.hips.add(hip);
+      return { hip, knee, ankle, side: s };
     });
   }
 
-  /** Walk / idle cycle. speed in m/s; wave makes the right arm wave. */
-  update(dt, { speed = 0, wave = false } = {}) {
-    this.speed += (speed - this.speed) * Math.min(1, dt * 8);
-    const k = Math.min(1, this.speed / 1.6);
-    this.t += dt * (2.2 + this.speed * 3.2);
-    const s = Math.sin(this.t), c = Math.cos(this.t);
-    this.legs[0].rotation.x = s * 0.6 * k;
-    this.legs[1].rotation.x = -s * 0.6 * k;
-    this.arms[0].rotation.x = -s * 0.55 * k;
-    this.arms[1].rotation.x = s * 0.55 * k;
-    this.hips.position.y = 0.78 + Math.abs(c) * 0.05 * k + Math.sin(this.t * 0.5) * 0.008 * (1 - k);
-    this.torso.rotation.y = s * 0.12 * k;
-    this.torso.rotation.x = 0.05 * k;
-    this.head.rotation.y = -s * 0.08 * k + Math.sin(this.t * 0.31) * 0.15 * (1 - k);
-    // breathing when standing
-    this.torso.scale.set(1, 1 + Math.sin(this.t * 0.9) * 0.012 * (1 - k), 1);
+  /**
+   * Procedural animation with bending joints.
+   * speed in m/s (walk ~1.4, run ~3.5); pose: 'stand' | 'sit'; wave: wave the right hand.
+   */
+  update(dt, { speed = 0, wave = false, pose = 'stand' } = {}) {
+    this.speed += (speed - this.speed) * Math.min(1, dt * 6);
+    const v = this.speed;
+    const k = Math.min(1, v / 1.2); // 0 standing -> 1 walking
+    const run = THREE.MathUtils.clamp((v - 2) / 1.5, 0, 1); // blends walk -> run
+    // phase advances with distance so the feet don't skate: one stride (two steps) ~1.4 m walking, ~2.4 m running
+    const stride = 1.4 + run * 1.0;
+    this.t += dt * (k > 0.02 ? (Math.PI * 2 * v) / stride : 0) + dt * 0.9 * (1 - k);
+    const p = this.t;
+    const ease = (x) => x * x * (3 - 2 * x);
+
+    if (pose === 'sit') {
+      this.hips.position.y = 0.6;
+      this.hips.rotation.set(0, 0, 0);
+      for (const l of this.legs) {
+        l.hip.rotation.set(-1.5, 0, l.side * 0.08);
+        l.knee.rotation.x = 1.5;
+        l.ankle.rotation.x = 0.05;
+      }
+      for (const a of this.arms) {
+        a.shoulder.rotation.set(-0.55, 0, a.side * 0.12);
+        a.elbow.rotation.set(-0.7, 0, 0);
+        a.wrist.rotation.x = 0.2;
+      }
+      this.torso.rotation.set(-0.08 + Math.sin(p * 0.9) * 0.012, 0, 0);
+      this.head.rotation.set(0.05, Math.sin(p * 0.27) * 0.35, 0);
+      return;
+    }
+
+    // ---- legs: thigh swings, knee folds as the leg passes under the body, foot rolls heel -> toe
+    const thighAmp = (0.5 + run * 0.35) * k;
+    for (const l of this.legs) {
+      const ph = p + (l.side > 0 ? Math.PI : 0);
+      const swing = Math.sin(ph); // +1 leg forward
+      const passing = Math.max(0, Math.cos(ph)); // >0 while the leg swings forward
+      const thigh = -swing * thighAmp - run * 0.15;
+      const knee = (0.08 + Math.pow(passing, 1.5) * (0.95 + run * 0.7)) * k + (1 - k) * 0.04;
+      l.hip.rotation.x = thigh;
+      l.knee.rotation.x = knee;
+      // keep the sole near the ground: undo the leg angle, add a toe-off flick behind and heel strike in front
+      l.ankle.rotation.x = -(thigh + knee) * 0.75 + (swing < -0.6 ? (swing + 0.6) * -0.9 : 0) * k - Math.max(0, swing - 0.7) * 0.6 * k;
+      l.hip.rotation.z = l.side * 0.03;
+    }
+    // idle: weight shifts slowly from foot to foot, one knee relaxes
+    const shift = Math.sin(p * 0.35) * (1 - k);
+    this.legs[0].knee.rotation.x += Math.max(0, shift) * 0.18;
+    this.legs[1].knee.rotation.x += Math.max(0, -shift) * 0.18;
+
+    // ---- hips and spine: bob (lowest when both feet are down), sway, twist against the shoulders
+    const bob = Math.abs(Math.cos(p)) * (0.045 + run * 0.06) * k;
+    this.hips.position.y = 0.78 - 0.035 * k + bob - run * 0.03 + Math.sin(p * 0.9) * 0.006 * (1 - k);
+    this.hips.position.x = Math.sin(p) * 0.03 * k + shift * 0.025;
+    this.hips.rotation.y = -Math.sin(p) * 0.14 * k;
+    this.hips.rotation.z = Math.sin(p) * 0.04 * k - shift * 0.04;
+    this.torso.rotation.y = Math.sin(p) * (0.26 + run * 0.1) * k; // shoulders counter-twist
+    this.torso.rotation.x = (0.06 + run * 0.22) * k;
+    this.torso.rotation.z = -Math.sin(p) * 0.03 * k + shift * 0.05;
+    this.torso.scale.set(1, 1 + Math.sin(p * 0.9) * 0.012 * (1 - k), 1); // breathing
+    // head stays level and looks around a little when standing
+    this.head.rotation.y = -this.torso.rotation.y * 0.8 - this.hips.rotation.y + Math.sin(p * 0.21) * 0.3 * (1 - k);
+    this.head.rotation.x = -this.torso.rotation.x * 0.7 + Math.cos(p * 2) * 0.02 * k;
+    this.head.rotation.z = -this.torso.rotation.z;
+
+    // ---- arms: swing opposite the legs, elbows bend more on the forward swing (and a lot when running)
+    const armAmp = (0.45 + run * 0.4) * k;
+    for (const a of this.arms) {
+      const ph = p + (a.side > 0 ? 0 : Math.PI);
+      const fwd = Math.sin(ph);
+      a.shoulder.rotation.x = -fwd * armAmp;
+      a.shoulder.rotation.z = a.side * (0.1 + run * 0.08) + Math.sin(p * 0.9 + a.side) * 0.01 * (1 - k);
+      a.elbow.rotation.x = -(0.18 + 0.25 * k + Math.max(0, fwd) * 0.45 * k + run * 0.9);
+      a.elbow.rotation.z = 0;
+      a.wrist.rotation.x = -0.1 - fwd * 0.12 * k;
+    }
     if (wave) {
-      this.arms[1].rotation.z = 2.3 + Math.sin(this.t * 2.6) * 0.35; // arm out to the side, waving
-      this.arms[1].rotation.x = -0.25;
-    } else this.arms[1].rotation.z += (0.08 - this.arms[1].rotation.z) * Math.min(1, dt * 6);
+      // right arm: upper arm out to the side, forearm up, hand waving from the elbow
+      const a = this.arms[1];
+      a.shoulder.rotation.set(-0.15, 0, 1.35);
+      a.elbow.rotation.set(0, 0, 1.25 + Math.sin(p * 5) * 0.4);
+      a.wrist.rotation.set(0, 0, Math.sin(p * 5 + 0.6) * 0.25);
+    }
   }
 }
 
