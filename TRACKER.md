@@ -35,7 +35,8 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [x] Touch controls resized for small phones (iPhone 11 Pro), with GAS / BRAKE pedals for driving
 - [ ] Touch controls confirmed comfortable on the iPhone 11 Pro by a person
 - [ ] Smooth on an iPhone 11 Pro at Medium quality
-- [ ] Art direction chosen and a look-dev slice built (one street + Sizwe) before restyling the whole city
+- [x] Art direction chosen (A: sunny toon) and a look test built: one Bo-Kaap street + Sizwe and three locals (`lookdev.html`)
+- [ ] Look test approved on the iPhone, then the city, people, cars and HUD restyled to match
 - [ ] New players understand what to do without reading the README
 - [ ] Sound and music pass (all generated in code today)
 - [ ] Kaaps, Afrikaans and isiXhosa street lines checked by native speakers
@@ -50,7 +51,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [ ] Shown to first players, with their feedback collected
 
 ## Next up
-- Pick an art direction (see the options Claude gave on 2026-10-22: stylised toon, chunky low-poly diorama, or comic-book outlines), then build one street + Sizwe in that style to compare.
+- Open the look test (`lookdev.html`, or the claude.ai link) on the iPhone, try all three moods, and say what to change. Once approved, roll the style out: people first, then buildings and props, then cars and the HUD.
 - On the iPhone: Add to Home Screen from https://elvisfalcao.github.io/gta2/ and play full screen; note anything about the new touch buttons that still feels wrong.
 - Play with sound on and listen to the AI street voices (`assets/voice/ai/`); note lines that sound wrong. Fix spellings in `WORDS` in `tools/voice-gen/generate.py` and regenerate with `--ids <id> --force`.
 - Review the street lines in `src/data/barks.js` (or `assets/voice/SCRIPT.md`) and get native speakers to check the Kaaps, Afrikaans and isiXhosa.
@@ -60,6 +61,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - Run `npm run playthrough` after changes to check all 10 missions still complete.
 
 ## Log
+- 2026-10-23 · Claude Code · Look test for art direction A (sunny toon): `lookdev.html` + `src/lookdev/` — toon shading, ink outlines, rounded characters with painted faces, Bo-Kaap street, golden hour / midday / night.
 - 2026-10-22 · Claude Code · Mobile: compact icon touch buttons sized for small phones, GAS/BRAKE pedals, joystick resting ring; installable app (icons, manifest, service worker, iPhone Add to Home Screen hint, offline); compact title screen on short screens.
 - 2026-10-22 · Claude Code · AI placeholder voices for the 303 first-pass street lines (Kokoro, generated locally; real recordings override them); generator in tools/voice-gen.
 - 2026-10-22 · Claude Code · Street voices: ~170 lines of reactive and ambient dialogue with speech bubbles, text-to-speech placeholders, a recording script and manifest tool, and a Street voices setting.

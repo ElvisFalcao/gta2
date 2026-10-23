@@ -187,6 +187,15 @@ A real recording always wins over the AI clip. To replace them with real voices:
 All lines live in `src/data/barks.js` — add a category or a line there and re-run the script.
 The one-file build has no audio files, so it always uses the browser's text-to-speech.
 
+### Look test: the "sunny toon" art direction
+
+`lookdev.html` is a separate test page for the planned new look: one Bo-Kaap street (painted houses with Cape Dutch
+gables, a corner café, a mural, lamps, a minibus taxi, hadedas, washing line, Table Mountain with its tablecloth)
+with Sizwe and three locals, in toon shading with ink outlines. Buttons switch between golden hour, midday and night.
+Drag to look, pinch / wheel to zoom, WASD or the left thumb to walk Sizwe. Code: `src/lookdev/`.
+The game itself is unchanged until the look is approved. `node tools/lookdev-shots.mjs` takes screenshots;
+`node tools/build-single.mjs out.html --page=lookdev.html` bundles it into one file.
+
 ### Writing a new mission
 
 Missions are async functions that `await` objectives. Add one to `src/missions/story.js`:

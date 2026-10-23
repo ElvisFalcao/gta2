@@ -1,7 +1,8 @@
 // Builds a single self-contained HTML file (CSS, game code and Three.js all inlined).
-// Usage: node tools/build-single.mjs [out.html] [--fragment]
+// Usage: node tools/build-single.mjs [out.html] [--fragment] [--cdn] [--page=lookdev.html]
 //   --fragment  omit <!doctype>/<html>/<head>/<body> (for hosts that add their own skeleton)
 //   --cdn       load Three.js from jsDelivr instead of inlining it
+//   --page      another page to bundle (its module script is the entry point), e.g. the look test
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { execSync } from 'child_process';
 import { dirname } from 'path';
@@ -10,18 +11,21 @@ const out = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[
 const fragment = process.argv.includes('--fragment');
 
 const cdn = process.argv.includes('--cdn');
+const page = (process.argv.find((a) => a.startsWith('--page=')) || '--page=index.html').slice(7);
+const pageHtml = readFileSync(page, 'utf8');
+const entry = pageHtml.match(/<script type="module" src="([^"]+)"><\/script>/)[1];
 const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-const esb = (extra) => execSync(`npx --yes esbuild@0.24.0 src/main.js --bundle --format=esm ${extra} --minify --legal-comments=none --log-level=warning`, { maxBuffer: 64 * 1024 * 1024 }).toString();
+const esb = (extra) => execSync(`npx --yes esbuild@0.24.0 ${entry} --bundle --format=esm ${extra} --minify --legal-comments=none --log-level=warning`, { maxBuffer: 64 * 1024 * 1024 }).toString();
 const js = cdn
   ? esb('--external:three').replace(/from\s*"three"/g, `from"${THREE_URL}"`)
   : '/* Three.js r160 (c) 2010-2023 Three.js Authors, MIT licence */\n' + esb('--alias:three=./vendor/three.module.min.js');
-const css = readFileSync('css/style.css', 'utf8');
-const html = readFileSync('index.html', 'utf8');
+const html = pageHtml;
+const css = html.includes('css/style.css') ? readFileSync('css/style.css', 'utf8') : [...html.matchAll(/<style>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join('\n');
 const title = html.match(/<title>[\s\S]*?<\/title>/)[0];
 const fonts = [...html.matchAll(/<link[^>]+fonts\.g[^>]+>/g)].map((m) => m[0]).join('\n');
 const desc = (html.match(/<meta name="description"[^>]*>/) || [''])[0];
 let body = html.slice(html.indexOf('<body>') + 6, html.lastIndexOf('</body>'));
-body = body.replace(/<script type="module" src="src\/main\.js"><\/script>/, '');
+body = body.replace(/<script type="module" src="[^"]+"><\/script>/, '');
 const safeJs = js.replace(/<\/script/gi, '<\\/script');
 const head = `${title}\n${desc}\n${fonts}\n<style>:root{color-scheme:dark}\n${css}</style>`;
 const content = `${head}\n${body}\n<script type="module">\n${safeJs}\n</script>\n`;
