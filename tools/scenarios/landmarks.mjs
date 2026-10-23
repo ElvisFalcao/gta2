@@ -25,6 +25,9 @@ export default async function ({ page, run, sleep }) {
     ['cableway', [-160, 120, 250], [-110, 180, 372]],
     ['campsbay', [-560, 12, 200], [-600, 4, 260]],
     ['trees-bokaap', [-130, 14, -150], [-170, 3, -195]],
+    ['wharf', [175, 14, -378], [227, 6, -410]],
+    ['basin', [120, 12, -398], [140, 0, -432]],
+    ['ships', [230, 24, -690], [250, 4, -760]],
   ];
   const hours = Number(process.env.HOUR || 15);
   // the cable car, parked halfway up, seen from the side
@@ -34,8 +37,11 @@ export default async function ({ page, run, sleep }) {
     const p = L.cableA.clone().lerp(L.cableB, 0.5);
     return [p.x, p.y - 4.2, p.z];
   });
+  const mural = await run(() => window.__game.landmarks.muralSpots[0]);
+  if (mural) shots.push(['mural', [mural.x + mural.nx * 8 + mural.nz * 3, mural.y + 0.6, mural.z + mural.nz * 8 + mural.nx * 3], [mural.x, mural.y, mural.z]]);
   shots.push(['cablecar', [cab[0] + 22, cab[1] + 4, cab[2] - 6], cab]);
   for (const [name, c, l] of shots) {
+    if (process.env.ONLY && !process.env.ONLY.split(',').includes(name)) continue;
     await run(([c, l, h]) => {
       const g = window.__game, V = g.player.rig.group.position.constructor;
       g.player.place(l[0], l[2], 0);

@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 import { MeshKit, GEO, vcMaterial } from '../core/meshkit.js';
-import { RAMP_SOFT, outlineMaterial } from '../core/toon.js';
+import { RAMP_SOFT, outlineMaterial, roundedBox } from '../core/toon.js';
 import { POI, PLATEAU } from './mapData.js';
 import { T } from './grid.js';
 import { RNG } from '../core/util.js';
@@ -27,6 +27,7 @@ export class Landmarks {
     this.kit = new MeshKit();
     this.anim = [];
     this.smokeSpots = [{ x: 640, y: 3.5, z: 108 }];
+    this.muralSpots = [];
   }
 
   sign(text, x, y, z, ry, w, h, opts = {}) {
@@ -161,17 +162,19 @@ export class Landmarks {
 
   waterfront(k) {
     // quay edges + bollards around the basin
-    k.block(140, 0, -455.6, 82, 0.6, 1.2, '#9e9a90');
-    k.block(140, 0, -404.4, 82, 0.6, 1.2, '#9e9a90');
-    k.block(99.4, 0, -430, 1.2, 0.6, 52, '#9e9a90');
-    k.block(180.6, 0, -430, 1.2, 0.6, 52, '#9e9a90');
-    for (let i = 0; i < 9; i++) k.cyl(104 + i * 9, 0.6, -456.6, 0.3, 0.7, '#2b2b2b', 6);
+    k.block(140, 0, -455.6, 82, 0.6, 1.2, '#e0d2b4');
+    k.block(140, 0, -404.4, 82, 0.6, 1.2, '#e0d2b4');
+    k.block(99.4, 0, -430, 1.2, 0.6, 52, '#e0d2b4');
+    k.block(180.6, 0, -430, 1.2, 0.6, 52, '#e0d2b4');
+    for (let i = 0; i < 9; i++) k.cyl(104 + i * 9, 0.6, -456.6, 0.32, 0.7, '#3a3f44', 8);
     // clock tower
     const { x: cx, z: cz } = POI.clockTower;
-    k.block(cx, 0, cz, 6, 12, 6, '#b5402e');
+    k.block(cx, 0, cz, 6, 12, 6, '#e0553c');
+    for (const y of [3.6, 7.4]) k.block(cx, y, cz, 6.3, 0.4, 6.3, '#fbf6ea');
     k.block(cx, 12, cz, 6.6, 0.6, 6.6, '#f2ede2');
-    k.block(cx, 12.6, cz, 4.4, 2.6, 4.4, '#b5402e');
-    k.cone(cx, 15.2, cz, 3.6, 4.5, '#3e5560', { four: true, ry: Math.PI / 4 });
+    k.block(cx, 12.6, cz, 4.4, 2.6, 4.4, '#e0553c');
+    k.cone(cx, 15.2, cz, 3.6, 4.5, '#3f9a7a', { four: true, ry: Math.PI / 4 });
+    k.cyl(cx, 19.7, cz, 0.12, 1.4, '#ffc928', 6);
     const clock = new THREE.MeshBasicMaterial({ map: makeClockTexture() });
     for (const [x, z, ry] of [[cx, cz + 3.05, 0], [cx, cz - 3.05, Math.PI], [cx + 3.05, cz, Math.PI / 2], [cx - 3.05, cz, -Math.PI / 2]]) {
       const m = new THREE.Mesh(new THREE.CircleGeometry(1.5, 16), clock);
@@ -180,18 +183,41 @@ export class Landmarks {
       this.root.add(m);
     }
     // the wharf shopping centre
-    k.block(227, 0, -439, 70, 14, 66, '#efe6d0');
-    k.block(227, 5, -405.9, 66, 4, 0.2, '#41596a');
-    k.block(227, 14, -439, 71, 1, 67, '#c9bfa8');
-    k.block(227, 15, -439, 30, 3, 20, '#9fc3d6');
+    k.block(227, 0, -439, 70, 14, 66, '#fff1d6');
+    // ground-floor shopfront glass with white mullions, upper-floor windows, on the quay and basin sides
+    k.block(227, 5, -405.9, 66, 4, 0.2, '#3c6a8c');
+    for (let i = 0; i <= 16; i++) k.block(194 + i * 4.125, 5, -405.75, 0.35, 4, 0.2, '#fbf6ea');
+    k.block(227, 9.4, -405.6, 70.6, 0.7, 0.8, '#fbf6ea'); // cornice over the glass
+    for (let i = 0; i < 11; i++) {
+      if (Math.abs(197 + i * 6 - 227) < 9) continue; // the sign hangs here
+      k.block(197 + i * 6, 10.8, -405.85, 3.4, 2.2, 0.2, '#fbf6ea');
+      k.block(197 + i * 6, 11.05, -405.75, 2.8, 1.7, 0.2, '#3c6a8c');
+    }
+    k.block(191.9, 5, -439, 0.2, 4, 60, '#3c6a8c');
+    for (let i = 0; i <= 14; i++) k.block(191.75, 5, -469 + i * (60 / 14), 0.2, 4, 0.35, '#fbf6ea');
+    k.block(191.6, 9.4, -439, 0.8, 0.7, 66.6, '#fbf6ea');
+    for (let i = 0; i < 10; i++) {
+      k.block(191.85, 10.8, -466 + i * 6, 0.2, 2.2, 3.4, '#fbf6ea');
+      k.block(191.75, 11.05, -466 + i * 6, 0.2, 1.7, 2.8, '#3c6a8c');
+    }
+    // striped shop awnings along the quay
+    const aw = ['#e2483d', '#3a8ad4', '#ffc928', '#5fd35a'];
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 4; j++) k.block(197 + i * 8.6 - 2.4 + j * 1.6, 4.5, -404.9, 1.6, 0.22, 2.2, j % 2 ? '#ffffff' : aw[i % 4], { rx: 0.35 });
+    }
+    k.block(227, 14, -439, 71, 1, 67, '#e0553c');
+    k.block(227, 15, -439, 30, 3, 20, '#9fd0e6');
+    k.block(227, 18, -439, 31, 0.5, 21, '#fbf6ea');
     this.sign('THE WHARF', 227, 11, -405.8, 0, 16, 2.2, { bg: '#1c3b52', fg: '#ffffff' });
     // aquarium
-    k.block(60, 0, -471, 48, 9, 14, '#3a7ca5');
-    k.block(60, 9, -471, 48.6, 0.6, 14.6, '#e8f1f5');
+    k.block(60, 0, -471, 48, 9, 14, '#3fa9d8');
+    k.block(60, 2.2, -463.95, 48.2, 0.6, 0.2, '#ffffff');
+    for (let i = 0; i < 6; i++) k.cyl(40 + i * 8, 4.2, -463.9, 1.1, 0.12, '#1d5f86', 12, { rx: Math.PI / 2 });
+    k.block(60, 9, -471, 48.6, 0.6, 14.6, '#fbf6ea');
     this.sign('AQUARIUM', 60, 6.5, -463.9, 0, 12, 2, { bg: '#e8f1f5', fg: '#1d5f86' });
     // fish & chips stall
-    k.block(60, 0, -405.5, 6, 2.6, 4.5, '#f2f2ea');
-    k.block(60, 2.6, -404.7, 7, 0.3, 6, '#2e86c1');
+    k.block(60, 0, -405.5, 6, 2.6, 4.5, '#fbf6ea');
+    for (let j = 0; j < 5; j++) k.block(57.2 + j * 1.4, 2.6, -404.7, 1.4, 0.3, 6, j % 2 ? '#ffffff' : '#3a8ad4');
     this.sign('FISH & CHIPS', 60, 3.4, -402.2, 0, 5, 0.9, { bg: '#2e86c1', fg: '#fff' });
     // helipad
     const { x: hx, z: hz } = POI.helipad;
@@ -209,7 +235,7 @@ export class Landmarks {
     k.block(wx, 0, wz, 8, 0.8, 14, '#9e9a90');
     const wheel = new THREE.Group();
     wheel.position.set(wx, 19.5, wz);
-    const wmat = toonM({ color: '#f0f2f4' });
+    const wmat = toonM({ color: '#ffffff' });
     const rim = new THREE.Mesh(new THREE.TorusGeometry(16, 0.35, 6, 48), wmat);
     rim.rotation.y = Math.PI / 2;
     wheel.add(rim);
@@ -223,9 +249,10 @@ export class Landmarks {
     }
     this.root.add(wheel);
     const gondolas = [];
-    const gcols = ['#e74c3c', '#f1c40f', '#3498db', '#2ecc71', '#9b59b6', '#e67e22'];
+    const gcols = ['#f25f5c', '#ffc928', '#3a8ad4', '#5fd35a', '#a86cf0', '#ff8c42'];
     for (let i = 0; i < 18; i++) {
-      const g = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.8, 1.6), toonM({ color: gcols[i % gcols.length] }));
+      const g = new THREE.Mesh(roundedBox(1.7, 1.9, 1.7, 0.45, 2), toonM({ color: gcols[i % gcols.length] }));
+      inkShell(g, 0.07);
       this.root.add(g);
       gondolas.push(g);
     }
@@ -486,20 +513,31 @@ export class Landmarks {
       m.position.set(f.x, h / 2 + 0.4, f.z);
       m.rotation.y = f.ry;
       this.root.add(m);
+      this.muralSpots.push({ x: f.x, y: h / 2 + 0.4, z: f.z, nx: Math.sign(f.tx), nz: Math.sign(f.tz) });
       placed++;
     }
   }
 
   boats() {
     const rng = new RNG(21);
+    const boatInk = outlineMaterial('#2a1d17', 0.07);
     const mk = (x, z, scale, color) => {
       const g = new THREE.Group();
-      const kk = new MeshKit();
-      kk.block(0, 0, 0, 2.6, 1.1, 7, color);
-      kk.add(GEO.cone4, { x: 0, y: 0.55, z: 4.4, sx: 3.6, sy: 1.8, sz: 1.1, rx: Math.PI / 2, ry: 0, color });
-      kk.block(0, 1.1, -0.8, 1.8, 1.3, 2.6, '#f2f2f2');
-      kk.cyl(0, 1.1, 1.5, 0.06, 6, '#ddd', 6);
+      const kk = new MeshKit(), ok = new MeshKit();
+      const both = (geo, o) => { kk.add(geo, o); ok.add(geo, o); };
+      // chubby rounded hull with a pointed bow, a white stripe and a little wheelhouse
+      both(roundedBox(2.8, 1.2, 7, 0.45, 2), { x: 0, y: 0.6, z: 0, color });
+      both(roundedBox(1.98, 1.2, 1.98, 0.45, 2), { x: 0, y: 0.6, z: 3.4, ry: Math.PI / 4, sz: 1.5, color });
+      kk.add(roundedBox(2.86, 0.16, 6.4, 0.08, 1), { x: 0, y: 0.95, z: 0, color: color === '#ffffff' ? '#e2483d' : '#ffffff' });
+      both(roundedBox(1.9, 1.4, 2.6, 0.25, 2), { x: 0, y: 1.85, z: -0.8, color: '#fbf6ea' });
+      for (const sx of [1, -1]) kk.add(roundedBox(0.04, 0.5, 1.8, 0.02, 1), { x: sx * 0.96, y: 2.0, z: -0.8, color: '#3c6a8c' });
+      kk.add(roundedBox(2.0, 0.14, 2.8, 0.06, 1), { x: 0, y: 2.6, z: -0.8, color });
+      kk.cyl(0, 2.6, -0.2, 0.06, 4.2, '#e9e4d8', 6);
+      kk.add(roundedBox(0.5, 0.3, 0.5, 0.12, 1), { x: 0, y: 1.3, z: -3.2, color: '#f7a92c' }); // life ring box
       const m = new THREE.Mesh(kk.build(), vcMaterial());
+      const ink = new THREE.Mesh(ok.build(), boatInk);
+      ink.raycast = () => {};
+      m.add(ink);
       g.add(m);
       g.position.set(x, -0.2, z);
       g.scale.setScalar(scale);
@@ -511,16 +549,25 @@ export class Landmarks {
         g.rotation.z = Math.sin(t * 0.9 + ph) * 0.04;
       });
     };
-    for (let i = 0; i < 5; i++) mk(rng.range(110, 170), rng.range(-448, -412), rng.range(0.7, 1), rng.pick(['#ffffff', '#1f4e79', '#c0392b']));
-    for (let i = 0; i < 4; i++) mk(rng.range(-200, 300), rng.range(-560, -480), rng.range(1, 1.4), rng.pick(['#ffffff', '#f1c40f', '#1f4e79']));
+    for (let i = 0; i < 5; i++) mk(rng.range(110, 170), rng.range(-448, -412), rng.range(0.7, 1), rng.pick(['#ffffff', '#3a8ad4', '#e2483d', '#ffc928']));
+    for (let i = 0; i < 4; i++) mk(rng.range(-200, 300), rng.range(-560, -480), rng.range(1, 1.4), rng.pick(['#ffffff', '#ffc928', '#3a8ad4', '#5fd35a']));
     // container ships out in Table Bay
+    const shipInk = outlineMaterial('#2a1d17', 0.35);
     for (const [x, z, ry] of [[250, -760, 0.3], [-160, -820, -0.2], [600, -620, 1.2]]) {
       const kk = new MeshKit();
-      kk.block(0, -2, 0, 14, 6, 80, '#7a1f1f');
-      kk.block(0, 4, -32, 12, 8, 10, '#f2f2f2');
-      const cc = ['#c9622f', '#2f5d8c', '#3f7f4f', '#b9a23a', '#8e44ad'];
-      for (let i = 0; i < 10; i++) kk.block(rng.range(-3, 3), 4, -22 + i * 5.5, 12, rng.range(2.6, 7.8), 5, rng.pick(cc));
+      kk.add(roundedBox(14, 6, 80, 2.4, 2), { x: 0, y: 1, z: 0, color: '#d8433a' });
+      kk.add(roundedBox(14.1, 1, 79, 0.5, 1), { x: 0, y: 3.4, z: 0, color: '#fbf6ea' });
+      kk.add(roundedBox(12, 9, 10, 1, 2), { x: 0, y: 8.5, z: -32, color: '#fbf6ea' });
+      kk.add(roundedBox(12.1, 1.2, 10.1, 0.4, 1), { x: 0, y: 10.5, z: -32, color: '#3c6a8c' });
+      const cc = ['#ff8c42', '#3a8ad4', '#5fd35a', '#ffc928', '#a86cf0', '#f25f5c'];
+      for (let i = 0; i < 10; i++) {
+        const h = rng.range(2.6, 7.8);
+        kk.add(roundedBox(12, h, 5, 0.35, 1), { x: rng.range(-1, 1), y: 4 + h / 2, z: -22 + i * 5.5, color: rng.pick(cc) });
+      }
       const m = new THREE.Mesh(kk.build(), vcMaterial());
+      const ink = new THREE.Mesh(m.geometry, shipInk);
+      ink.raycast = () => {};
+      m.add(ink);
       m.position.set(x, 0, z);
       m.rotation.y = ry;
       this.root.add(m);

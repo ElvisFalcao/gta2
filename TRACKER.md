@@ -53,7 +53,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 
 ## Next up
 - The sunny-toon restyle is live in all four stages (people + fighting, city, cars, HUD). Play it on the iPhone at https://elvisfalcao.github.io/gta2/ and note what looks off or runs slowly. If the old look still shows, reload once: the offline cache updates in the background.
-- Possible polish next: toon colours on the minimap and big map; waterfront, boats and murals still use the older look. Medium quality is now about 770k triangles in Bo-Kaap and 990k in the city centre; if the iPhone stutters, drop tree outlines on Medium too (`buildTrees` in `src/world/cityMeshes.js`).
+- Possible polish next: toon colours on the minimap and big map. Medium quality is now about 770k triangles in Bo-Kaap and 990k in the city centre; if the iPhone stutters, drop tree outlines on Medium too (`buildTrees` in `src/world/cityMeshes.js`).
 - Check the restyled city on the iPhone at Medium quality; Bo-Kaap is about 600k triangles and the city centre about 830k, so watch the frame rate there.
 - On the iPhone: Add to Home Screen from https://elvisfalcao.github.io/gta2/ and play full screen; note anything about the touch buttons that still feels wrong.
 - Play with sound on and listen to the AI street voices (`assets/voice/ai/`); fix spellings in `WORDS` in `tools/voice-gen/generate.py` and regenerate with `--ids <id> --force`.
@@ -63,6 +63,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - Run `npm run playthrough` after changes to check all 10 missions still complete.
 
 ## Log
+- 2026-10-23 · Claude Code · Waterfront, boats and murals restyle: the Wharf gets shopfront glass, upper windows and striped awnings; brighter clock tower, aquarium with portholes and fish-and-chips canopy; rounded outlined gondolas on the big wheel; chubby inked harbour boats and container ships; Woodstock murals repainted as cartoon murals (protea, Table Mountain, a face or a snoek, plus a slogan) with ink frames.
 - 2026-10-23 · Claude Code · Polish pass: smooth toon mountains with ink silhouettes and brighter fynbos / sandstone colours, a fuller tablecloth cloud, puffy outlined tree crowns and rounder bushes (no tree outlines on Low quality), toon landmarks with ink shells (stadium, castle rebuilt as five walls, cable car, lighthouse). `tools/scenarios/landmarks.mjs` screenshots them.
 - 2026-10-23 · Claude Code · HUD and menus restyle (stage 4): cream sticker panels with ink borders and hard drop shadows, ink-outlined numbers, Lilita One for big titles, comic speech bubbles, restyled touch buttons, menu and title screen. `tools/scenarios/hudsheet.mjs` screenshots the HUD, a choice and the menu.
 - 2026-10-23 · Claude Code · Cars restyle (stage 3): every vehicle rebuilt from rounded toon shells with ink outlines, big round headlights, chrome bumpers, a Quantum-style taxi nose and outlined chunky wheels; same sizes and handling. `tools/scenarios/carsheet.mjs` makes a line-up contact sheet.

@@ -234,35 +234,90 @@ export function makeSignTexture(text, { bg = '#1d2b3a', fg = '#ffffff', w = 512,
   return toTexture(c, { repeat: false });
 }
 
+/** Woodstock street mural, sunny-toon style: bright gradient, inked shapes, one motif and a slogan. */
 export function makeMuralTexture(seed) {
-  const [c, g] = canvas(256, 128);
+  const W = 512, H = 256;
+  const [c, g] = canvas(W, H);
   const rng = new RNG(seed);
-  const pal = ['#ff4f79', '#ffd23f', '#3fc1c9', '#5b5bd6', '#ff8c42', '#2ec27e', '#f8f4e3', '#1e1e24'];
-  g.fillStyle = rng.pick(pal);
-  g.fillRect(0, 0, 256, 128);
-  for (let i = 0; i < 14; i++) {
-    g.fillStyle = rng.pick(pal);
+  const INK = '#2a1d17';
+  const pal = ['#ff5fa2', '#ffc928', '#38c6d9', '#7a6cf0', '#ff8c42', '#5fd35a', '#f25f5c', '#3f8efc'];
+  const pick2 = () => { const a = rng.pick(pal); let b = rng.pick(pal); while (b === a) b = rng.pick(pal); return [a, b]; };
+  const [c0, c1] = pick2();
+  const bg = g.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, c0);
+  bg.addColorStop(1, c1);
+  g.fillStyle = bg;
+  g.fillRect(0, 0, W, H);
+  const inked = (draw, fill, lw = 6) => {
     g.beginPath();
-    const kind = rng.int(0, 2);
-    if (kind === 0) g.arc(rng.range(0, 256), rng.range(0, 128), rng.range(10, 50), 0, Math.PI * 2);
-    else if (kind === 1) {
-      g.moveTo(rng.range(0, 256), rng.range(0, 128));
-      for (let k = 0; k < 4; k++) g.lineTo(rng.range(0, 256), rng.range(0, 128));
-    } else g.rect(rng.range(0, 220), rng.range(0, 100), rng.range(20, 80), rng.range(10, 40));
+    draw();
+    g.fillStyle = fill;
+    g.fill();
+    g.lineWidth = lw;
+    g.strokeStyle = INK;
+    g.stroke();
+  };
+  // big soft blobs and sun rays behind
+  g.save();
+  g.globalAlpha = 0.35;
+  g.fillStyle = '#ffffff';
+  for (let i = 0; i < 9; i++) {
+    g.beginPath();
+    const a0 = (i / 9) * Math.PI * 2;
+    g.moveTo(W * 0.72, H * 0.5);
+    g.arc(W * 0.72, H * 0.5, W, a0, a0 + 0.17);
     g.fill();
   }
-  // a stylised face / protea motif
-  g.fillStyle = rng.pick(pal);
-  g.beginPath();
-  g.arc(128, 64, 30, 0, Math.PI * 2);
-  g.fill();
-  g.fillStyle = '#1e1e24';
-  g.fillRect(114, 56, 8, 8);
-  g.fillRect(134, 56, 8, 8);
-  g.font = 'bold 28px "Archivo Black", sans-serif';
-  g.fillStyle = '#ffffff';
+  g.restore();
+  for (let i = 0; i < 4; i++) inked(() => g.arc(rng.range(0, W), rng.range(0, H), rng.range(30, 70), 0, Math.PI * 2), rng.pick(pal), 5);
+  // the motif
+  const mx = W * 0.25, my = H * 0.48;
+  const motif = rng.int(0, 3);
+  if (motif === 0) {
+    // protea
+    g.save();
+    g.translate(mx, my);
+    for (let i = 0; i < 12; i++) {
+      g.rotate(Math.PI / 6);
+      inked(() => g.ellipse(0, -48, 16, 46, 0, 0, Math.PI * 2), i % 2 ? '#ff5fa2' : '#ffd1e3', 4);
+    }
+    inked(() => g.arc(0, 0, 26, 0, Math.PI * 2), '#ffe9a8', 5);
+    g.restore();
+  } else if (motif === 1) {
+    // Table Mountain under a big sun
+    inked(() => g.arc(mx, my - 20, 52, 0, Math.PI * 2), '#ffe27a');
+    inked(() => { g.moveTo(mx - 110, H - 30); g.lineTo(mx - 70, my); g.lineTo(mx + 70, my); g.lineTo(mx + 110, H - 30); g.closePath(); }, '#3f8a4a');
+    inked(() => g.ellipse(mx, my - 2, 74, 12, 0, 0, Math.PI * 2), '#ffffff', 4);
+  } else if (motif === 2) {
+    // a big friendly face
+    inked(() => g.arc(mx, my, 70, 0, Math.PI * 2), rng.pick(['#8a5a3c', '#6b4129', '#b07850']));
+    inked(() => g.arc(mx - 24, my - 14, 13, 0, Math.PI * 2), '#ffffff', 4);
+    inked(() => g.arc(mx + 24, my - 14, 13, 0, Math.PI * 2), '#ffffff', 4);
+    g.fillStyle = INK;
+    g.beginPath(); g.arc(mx - 22, my - 12, 6, 0, Math.PI * 2); g.arc(mx + 26, my - 12, 6, 0, Math.PI * 2); g.fill();
+    g.lineWidth = 7; g.strokeStyle = INK; g.beginPath(); g.arc(mx, my + 8, 32, 0.2, Math.PI - 0.2); g.stroke();
+  } else {
+    // a snoek, the Cape's own fish
+    inked(() => { g.ellipse(mx, my, 90, 30, 0, 0, Math.PI * 2); }, '#9fc3d6');
+    inked(() => { g.moveTo(mx + 80, my); g.lineTo(mx + 130, my - 36); g.lineTo(mx + 130, my + 36); g.closePath(); }, '#7fa8c0');
+    inked(() => g.arc(mx - 58, my - 6, 8, 0, Math.PI * 2), '#ffffff', 3);
+  }
+  // slogan
+  const word = rng.pick(['UBUNTU', 'KAAPSTAD', 'LEKKER', 'MZANSI', 'SHARP!', 'WOODSTOCK', 'EISH!', 'HOWZIT']);
+  g.font = '84px "Lilita One", "Bebas Neue", Impact, sans-serif';
   g.textAlign = 'center';
-  g.fillText(rng.pick(['UBUNTU', 'KAAPSTAD', 'LEKKER', 'MZANSI', 'SHARP!', 'WOODSTOCK']), 128, 118);
+  g.textBaseline = 'middle';
+  const tx = W * 0.68;
+  g.lineJoin = 'round';
+  g.lineWidth = 14;
+  g.strokeStyle = INK;
+  g.strokeText(word, tx, H * 0.5 + 6, W * 0.56);
+  g.fillStyle = '#ffffff';
+  g.fillText(word, tx, H * 0.5, W * 0.56);
+  // painted frame
+  g.lineWidth = 10;
+  g.strokeStyle = INK;
+  g.strokeRect(5, 5, W - 10, H - 10);
   return toTexture(c, { repeat: false });
 }
 
