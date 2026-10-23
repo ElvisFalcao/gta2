@@ -36,7 +36,8 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [ ] Touch controls confirmed comfortable on the iPhone 11 Pro by a person
 - [ ] Smooth on an iPhone 11 Pro at Medium quality
 - [x] Art direction chosen (A: sunny toon) and a look test built: one Bo-Kaap street + Sizwe and three locals (`lookdev.html`)
-- [ ] Look test approved on the iPhone, then the city, people, cars and HUD restyled to match
+- [x] City, people, cars and HUD restyled in the game to match the look test (sunny toon)
+- [ ] Sunny-toon restyle approved on the iPhone by a person
 - [ ] New players understand what to do without reading the README
 - [ ] Sound and music pass (all generated in code today)
 - [ ] Kaaps, Afrikaans and isiXhosa street lines checked by native speakers
@@ -51,7 +52,8 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [ ] Shown to first players, with their feedback collected
 
 ## Next up
-- Rolling the sunny-toon style into the game in stages, pushing after each: 1 people + fighting (done), 2 city (done), 3 cars (done), 4 HUD and menus (next).
+- The sunny-toon restyle is live in all four stages (people + fighting, city, cars, HUD). Play it on the iPhone at https://elvisfalcao.github.io/gta2/ and note what looks off or runs slowly. If the old look still shows, reload once: the offline cache updates in the background.
+- Possible polish next: trees, mountains and landmarks (stadium, cable car, Lion's Head) in the same toon style; toon pass on the minimap and big map colours.
 - Check the restyled city on the iPhone at Medium quality; Bo-Kaap is about 600k triangles and the city centre about 830k, so watch the frame rate there.
 - On the iPhone: Add to Home Screen from https://elvisfalcao.github.io/gta2/ and play full screen; note anything about the touch buttons that still feels wrong.
 - Play with sound on and listen to the AI street voices (`assets/voice/ai/`); fix spellings in `WORDS` in `tools/voice-gen/generate.py` and regenerate with `--ids <id> --force`.
@@ -61,6 +63,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - Run `npm run playthrough` after changes to check all 10 missions still complete.
 
 ## Log
+- 2026-10-23 · Claude Code · HUD and menus restyle (stage 4): cream sticker panels with ink borders and hard drop shadows, ink-outlined numbers, Lilita One for big titles, comic speech bubbles, restyled touch buttons, menu and title screen. `tools/scenarios/hudsheet.mjs` screenshots the HUD, a choice and the menu.
 - 2026-10-23 · Claude Code · Cars restyle (stage 3): every vehicle rebuilt from rounded toon shells with ink outlines, big round headlights, chrome bumpers, a Quantum-style taxi nose and outlined chunky wheels; same sizes and handling. `tools/scenarios/carsheet.mjs` makes a line-up contact sheet.
 - 2026-10-23 · Claude Code · City restyle (stage 2): toon buildings with cartoon window frames, Cape Dutch gables on Bo-Kaap and Victorian rows, ink outlines on every building, brighter palettes; ground, roads and trees toon-shaded. `tools/scenarios/tour.mjs` and `perf.mjs` for screenshots and triangle counts.
 - 2026-10-23 · Claude Code · Game people restyle (stage 1): everyone in the game is now a sunny-toon skinned character with bending joints, the jab / cross / kick combo, guard stance, knockdown and get-up, hit-stop and POW bursts.

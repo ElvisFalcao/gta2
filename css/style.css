@@ -378,3 +378,150 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   #install-hint { font-size: 12px; padding: 6px 12px; margin-top: 8px; }
   .t-foot { display: none; }
 }
+
+/* ================================================================ sunny-toon skin
+   Same layout as above; this block only re-dresses it to match the game: cream "sticker" panels with
+   thick ink borders and hard drop shadows, ink-outlined numbers, a chunky cartoon face for big titles. */
+:root {
+  --inkc: #2a1d17;
+  --cream: #fbf6ea;
+  --cream-2: #f1e8d6;
+  --gold: #ffc928;
+  --green: #5fd35a;
+  --red: #f0503f;
+  --orange: #ff9d1c;
+  --blue: #4bb8ff;
+  --cartoon: 'Lilita One', 'Bebas Neue', Impact, sans-serif;
+  --panel: var(--cream);
+  --line: rgba(42, 29, 23, 0.85);
+  --muted: #8a7766;
+  --outline: -2px -2px 0 var(--inkc), 2px -2px 0 var(--inkc), -2px 2px 0 var(--inkc), 2px 2px 0 var(--inkc), 0 -2px 0 var(--inkc), 0 2px 0 var(--inkc), -2px 0 0 var(--inkc), 2px 0 0 var(--inkc), 0 4px 0 var(--inkc);
+  --sticker: 0 4px 0 var(--inkc);
+}
+body { background: #1d2f3f; }
+
+/* panels: cream stickers with ink text */
+.toast, #objective, #prompt, #dialogue, #choices .q, #choices button, #holdbar, .mg, #how, .map-legend, .map-hint, #rotate-hint, #install-hint {
+  background: var(--cream); color: var(--inkc); border: 2.5px solid var(--inkc); box-shadow: var(--sticker); text-shadow: none;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.toast { border-left-width: 9px; border-left-color: var(--gold); border-radius: 12px; font-weight: 600; }
+.toast.good { border-left-color: var(--green); }
+.toast.warn { border-left-color: var(--red); }
+.toast.cash { color: #2f8f2c; border-left-color: var(--green); }
+.toast.resp { color: #d26f00; border-left-color: var(--orange); }
+.toast b, #objective em { color: #d2461f; }
+#objective { border-radius: 14px; }
+#prompt { border-radius: 999px; }
+#prompt kbd { background: var(--gold); color: var(--inkc); border: 2px solid var(--inkc); border-radius: 7px; }
+#prompt kbd.pad { color: #fff; text-shadow: 0 1px 0 var(--inkc); }
+#holdbar { border-radius: 999px; }
+#holdbar i { background: var(--gold); }
+#holdbar span { text-shadow: none; }
+
+#dialogue { border-radius: 16px; border-width: 3px; box-shadow: 0 5px 0 var(--inkc); }
+#dialogue .who { font-family: var(--cartoon); color: #d2461f; letter-spacing: 0.4px; }
+#dialogue .next { color: var(--muted); }
+#choices .q { border-radius: 14px; margin-bottom: 4px; }
+#choices button { border-radius: 12px; color: var(--inkc); }
+#choices button:hover, #choices button:focus-visible, #choices button.sel { background: #fff3c4; border-color: var(--inkc); box-shadow: 0 4px 0 var(--inkc), 0 0 0 3px var(--gold); }
+#choices button .k { background: var(--gold); color: var(--inkc); border: 2px solid var(--inkc); border-radius: 6px; }
+#hud.pad #choices .opts::after { background: var(--cream); color: var(--inkc); border: 2px solid var(--inkc); }
+
+/* big numbers and titles: ink outline + drop */
+#clock, #money, #respect, #timer, #counter, #bigarea, #vehname, #arrest, .map-title { text-shadow: var(--outline); }
+#clock { color: #fff; }
+#money { color: var(--green); }
+#wanted { color: rgba(255, 255, 255, 0.35); text-shadow: -1px -1px 0 var(--inkc), 1px 1px 0 var(--inkc), 1px -1px 0 var(--inkc), -1px 1px 0 var(--inkc); }
+#wanted b.on { color: var(--gold); text-shadow: var(--outline); }
+#banner .title { font-family: var(--cartoon); letter-spacing: 1px; text-shadow: -3px -3px 0 var(--inkc), 3px -3px 0 var(--inkc), -3px 3px 0 var(--inkc), 3px 3px 0 var(--inkc), 0 -3px 0 var(--inkc), 0 3px 0 var(--inkc), -3px 0 0 var(--inkc), 3px 0 0 var(--inkc), 0 8px 0 var(--inkc); }
+#banner .sub { text-shadow: var(--outline); }
+#bigarea { font-family: var(--cartoon); }
+
+.bar { background: rgba(42, 29, 23, 0.6); border: 2.5px solid var(--inkc); border-radius: 999px; box-shadow: 0 3px 0 var(--inkc); }
+.bar.health i { background: linear-gradient(#ff8a78, #f0503f); }
+
+#minimap-wrap { filter: drop-shadow(0 4px 0 var(--inkc)); }
+#btn-pause { background: var(--cream); color: var(--inkc); border: 2.5px solid var(--inkc); box-shadow: var(--sticker); }
+
+/* touch buttons: ink glass with a cream rim, gold when pressed */
+.tb { background: rgba(42, 29, 23, 0.42); border: 2px solid rgba(251, 246, 234, 0.8); text-shadow: 0 1px 0 var(--inkc); }
+.tb svg { filter: drop-shadow(0 1.5px 0 rgba(42, 29, 23, 0.8)); }
+.tb.down { background: var(--gold); border-color: var(--inkc); color: var(--inkc); text-shadow: none; }
+.b-attack, .tb.b-rev { border-color: #ff9a8a; }
+.b-enter { border-color: #8fd0ff; }
+.tb.b-gas { border-color: #9be88f; }
+.tb.pill { background: var(--cream); color: var(--inkc); border: 2.5px solid var(--inkc); box-shadow: 0 3px 0 var(--inkc); text-shadow: none; }
+.tb.pill svg { filter: none; }
+#joy-base { border: 2px solid rgba(251, 246, 234, 0.7); background: rgba(42, 29, 23, 0.25); }
+#joy-knob { background: var(--cream); border: 2.5px solid var(--inkc); box-shadow: 0 3px 0 var(--inkc); }
+
+/* mini-games */
+.mg { border-radius: 18px; border-width: 3px; box-shadow: 0 6px 0 var(--inkc); }
+.mg h2 { font-family: var(--cartoon); color: #d2461f; }
+.mg p { color: #5d4b3e; }
+.mg .meter { background: #e9dcc4; border: 2.5px solid var(--inkc); border-radius: 999px; }
+.mg .tap { background: var(--gold); color: var(--inkc); border: 3px solid var(--inkc); box-shadow: 0 5px 0 var(--inkc); }
+.mg .tap:active { background: #ffdb66; transform: translateY(3px); box-shadow: 0 2px 0 var(--inkc); }
+.mg .row button { background: var(--cream-2); color: var(--inkc); border: 2.5px solid var(--inkc); box-shadow: 0 3px 0 var(--inkc); }
+
+/* menu */
+#menu { background: rgba(32, 24, 19, 0.82); }
+.logo { font-family: var(--cartoon); text-shadow: var(--outline); letter-spacing: 1px; }
+.menu-close { background: var(--cream); color: var(--inkc); border: 2.5px solid var(--inkc); box-shadow: var(--sticker); }
+.menu-nav button { background: rgba(251, 246, 234, 0.1); border: 2.5px solid transparent; }
+.menu-nav button.on { background: var(--gold); color: var(--inkc); border-color: var(--inkc); box-shadow: var(--sticker); }
+.menu-body { background: var(--cream); color: var(--inkc); border: 3px solid var(--inkc); border-radius: 18px; box-shadow: 0 6px 0 var(--inkc); }
+.menu-body p, .menu-body li { color: #4a3a2f; }
+.menu-body h3 { color: #d2461f; }
+.menu-body .muted, .mission-list .meta, .stat .k { color: var(--muted); }
+.mission-list li, .stat, .clue { background: var(--cream-2); border: 2px solid rgba(42, 29, 23, 0.18); }
+.clue { border-left: 6px solid var(--gold); }
+.mission-list .done .st { color: #2f8f2c; }
+.mission-list .open .st { color: #d26f00; }
+.setting { border-bottom: 2px dashed rgba(42, 29, 23, 0.18); }
+.setting select, .cheat-input input { background: #fff; color: var(--inkc); border: 2.5px solid var(--inkc); border-radius: 10px; }
+.btn { background: var(--cream-2); color: var(--inkc); border: 2.5px solid var(--inkc); border-radius: 12px; box-shadow: var(--sticker); }
+.btn.primary { background: var(--gold); color: var(--inkc); border-color: var(--inkc); }
+.btn.danger { background: #ffd9d2; color: #a3261a; border-color: var(--inkc); }
+.btn:active, .menu-close:active, #title-btns button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--inkc); }
+.kbd-table td { border-bottom: 2px dashed rgba(42, 29, 23, 0.15); }
+.kbd-table td:first-child { color: #d2461f; }
+
+/* map */
+.map-legend i { border: 2px solid var(--inkc); }
+.map-btns button { background: var(--cream); color: var(--inkc); border: 2.5px solid var(--inkc); box-shadow: var(--sticker); }
+.map-hint { color: var(--inkc); }
+
+/* title screen */
+#title { background: radial-gradient(ellipse at 50% 30%, rgba(255, 214, 150, 0.08), rgba(32, 24, 19, 0.7)); }
+.t-logo { font-family: var(--cartoon); letter-spacing: 1px; text-shadow: -4px -4px 0 var(--inkc), 4px -4px 0 var(--inkc), -4px 4px 0 var(--inkc), 4px 4px 0 var(--inkc), 0 -4px 0 var(--inkc), 0 4px 0 var(--inkc), -4px 0 0 var(--inkc), 4px 0 0 var(--inkc), 0 10px 0 var(--inkc); }
+.t-logo span { font-family: var(--display); letter-spacing: 0.3em; text-shadow: var(--outline); }
+.t-kicker { text-shadow: var(--outline); }
+.t-tag, .load-msg { text-shadow: 0 1px 0 var(--inkc), 0 0 3px var(--inkc); }
+.load-bar { background: rgba(42, 29, 23, 0.6); border: 2.5px solid var(--inkc); height: 12px; border-radius: 999px; }
+#title-btns .big { font-family: var(--cartoon); font-size: 28px; background: var(--gold); color: var(--inkc); border: 3px solid var(--inkc); border-radius: 16px; box-shadow: 0 5px 0 var(--inkc); }
+#title-btns .big#btn-new:not(:only-child) { background: var(--cream); color: var(--inkc); }
+#title-btns .small, #btn-how-close { background: rgba(251, 246, 234, 0.92); color: var(--inkc); border: 2.5px solid var(--inkc); border-radius: 12px; box-shadow: var(--sticker); }
+#how { border-radius: 18px; border-width: 3px; box-shadow: 0 6px 0 var(--inkc); }
+.how-grid h3 { font-family: var(--cartoon); color: #d2461f; }
+.how-grid p { color: #4a3a2f; }
+#install-hint { border-radius: 14px; }
+#install-hint .install-btn { color: var(--inkc); border: 2px solid var(--inkc); }
+
+/* speech bubbles: comic style */
+#speech { background: #fff; color: var(--inkc); border: 2.5px solid var(--inkc); box-shadow: 0 3px 0 var(--inkc); }
+#speech::after { bottom: -10px; margin-left: -9px; border-width: 9px; border-top-color: var(--inkc); border-bottom: 0; }
+#speech .g { color: #6b5a4c; }
+
+@media (max-height: 500px) {
+  #title-btns .big { font-size: 22px; }
+}
+#respect { margin-top: 7px; }
+.bar.resp { margin-top: 6px; }
+/* small text gets a thinner ink line so the drop doesn't ghost the letters */
+#respect, #counter, #wanted b.on, .t-kicker, #vehname {
+  text-shadow: -1.5px -1.5px 0 var(--inkc), 1.5px -1.5px 0 var(--inkc), -1.5px 1.5px 0 var(--inkc), 1.5px 1.5px 0 var(--inkc), 0 2px 0 var(--inkc);
+}
+/* with no save to continue, New Game is the main button */
+#title-btns #btn-continue.hidden + #btn-new { background: var(--gold); }
