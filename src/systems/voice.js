@@ -1,7 +1,8 @@
 // Street voices: people react out loud (bumped, nearly run over, hooted at, punched, robbed,
 // chased) and chat in the background, with a speech bubble over the speaker. A line plays a
-// clip when assets/voice/manifest.json lists one (a real recording in assets/voice/<voice>/, else an
-// AI-generated one in assets/voice/ai/<voice>/), otherwise the browser's text-to-speech (a South African English voice when the device has one)
+// clip when assets/voice/manifest.json lists one (a real recording in assets/voice/<voice>/, else a Google Flow
+// test clip in assets/voice/flow/<voice>/, else a Kokoro AI one in assets/voice/ai/<voice>/), otherwise the
+// browser's text-to-speech (a South African English voice when the device has one)
 // stands in. One person speaks at a time; a higher-priority reaction interrupts chatter.
 
 import * as THREE from 'three';

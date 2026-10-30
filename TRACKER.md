@@ -6,7 +6,7 @@ type: Game
 stage: Polish
 tools: [Claude Code]
 started: 2026-10-16
-updated: 2026-10-23
+updated: 2026-10-30
 target:
 live: https://elvisfalcao.github.io/gta2/
 repo: https://github.com/ElvisFalcao/gta2
@@ -47,6 +47,8 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - [ ] Sound and music pass (all generated in code today)
 - [ ] Kaaps, Afrikaans and isiXhosa street lines checked by native speakers
 - [x] AI placeholder voices (Kokoro) for the ★ first-pass lines, checked with speech recognition
+- [x] Every one of the 563 street lines has an AI clip, so the robotic browser voice no longer plays in normal play
+- [ ] Google Flow voice test: the 3 test characters in `docs/voice-flow-test.md` made, brought into the game and judged (accent, exact words, same voice across clips), and a decision made between Flow, Kokoro and real recordings
 - [ ] Real voices recorded for the ★ first-pass lines in `assets/voice/SCRIPT.md`, with a signed release from every speaker
 
 ### Ship
@@ -62,10 +64,12 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - Balance after the playtest: weapon prices vs mission pay, how fast fat builds and burns, how hard armed cops hit.
 - If the iPhone stutters: drop tree outlines on Medium too (`buildTrees` in `src/world/cityMeshes.js`); Medium is about 780k triangles in Bo-Kaap and 1M in the city centre.
 - Ship items still open: link preview image for WhatsApp, a public name that doesn't use "GTA", and picking one repo (gta2 is far ahead of gta3; gta is empty).
-- Voices: native speakers to check the Kaaps, Afrikaans and isiXhosa lines in `src/data/barks.js`; record the ★ lines as `assets/voice/<voice>/<id>.mp3`, then run `node tools/voice-script.mjs`.
+- **Voices, Google Flow test (owner):** make the three characters in `docs/voice-flow-test.md` (Nano Banana image, then an 8-second Flow video using the prompt given) and send the MP4s. **Next session:** cut them in with `node tools/voice-flow.mjs <mp4> <voice> <ids>` (the exact commands are in the doc), listen in game, then decide whether Flow replaces Kokoro. If it does, the silent story cutscenes (about 97 lines for Sizwe, Noma, Zanele, Vusi, Kyle and the others) are the obvious next batch.
+- Voices: the 260 non-★ Kokoro clips made on 2026-10-30 haven't been checked with speech recognition yet, because model downloads were blocked in that session. Native speakers still need to check the Kaaps, Afrikaans and isiXhosa lines in `src/data/barks.js`. Real recordings go in `assets/voice/<voice>/<id>.mp3`, followed by `node tools/voice-script.mjs`.
 - After any change run `features` and `story` (`node tools/smoke.mjs <url> <dir> features|story`).
 
 ## Log
+- 2026-10-30 · Claude Code · Voices: Kokoro AI clips for the other 260 street lines, so all 563 have a clip. Set up a Google Flow voice test: prompts for 3 characters (`docs/voice-flow-test.md`) and `tools/voice-flow.mjs`, which cuts a Flow video into game clips (Flow beats Kokoro, real recordings beat both).
 - 2026-10-23 · Claude Code · Build work for this round is finished; stage moved to Polish. Handing over to a full playtest on the iPhone and PC.
 - 2026-10-23 · Claude Code · Tools & guns (cricket bat, spanner, pistol, SMG, shotgun) with Sipho's Hardware in Woodstock, pickups, aim assist + lock-on reticle, armed cops at 3 stars; visible body (gym muscle, junk-food fat that slows you down, fruit cart); Langa Boxing Club lessons (hook, uppercut, body shot combos); Pause → Title screen. `tools/scenarios/features.mjs` (18 checks) and `movesheet.mjs`.
 - 2026-10-23 · Claude Code · Waterfront, boats and murals restyle: the Wharf gets shopfront glass, upper windows and striped awnings; brighter clock tower, aquarium with portholes and fish-and-chips canopy; rounded outlined gondolas on the big wheel; chubby inked harbour boats and container ships; Woodstock murals repainted as cartoon murals (protea, Table Mountain, a face or a snoek, plus a slogan) with ink frames.
