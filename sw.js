@@ -1,7 +1,7 @@
 // Service worker: lets the home-screen app start offline and load fast.
 // Stale-while-revalidate: serve from the cache, refresh it in the background,
 // so a new version shows up on the next launch.
-const CACHE = 'mother-city-v1';
+const CACHE = 'mother-city-v2';
 const CORE = ['./', './index.html', './css/style.css', './src/main.js', './vendor/three.module.min.js', './manifest.webmanifest', './icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
@@ -20,6 +20,20 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(req.url);
   const sameOrigin = url.origin === self.location.origin;
   if (!sameOrigin && !/fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) return;
+  // network first for the voice list, so new clips play on the next launch, not the one after
+  if (url.pathname.endsWith('/assets/voice/manifest.json')) {
+    e.respondWith(
+      caches.open(CACHE).then((cache) =>
+        fetch(req)
+          .then((res) => {
+            if (res.ok) cache.put(req, res.clone());
+            return res;
+          })
+          .catch(() => cache.match(req)),
+      ),
+    );
+    return;
+  }
   e.respondWith(
     caches.open(CACHE).then(async (cache) => {
       const key = req.mode === 'navigate' ? './index.html' : req;

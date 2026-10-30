@@ -117,7 +117,10 @@ export class VoiceSystem {
     const ok = B.lines.filter((l) => !l[3] || l[3].includes(voice));
     const fresh = ok.filter((l) => !this.recent.includes(l[0]));
     const from = fresh.length ? fresh : ok;
-    return from.length ? from[Math.floor(Math.random() * from.length)] : null;
+    // Flow clips are only a few of each voice's lines so far: favour them or nobody hears them
+    const flow = from.filter((l) => String(this.files[voice]?.[l[0]] || '').startsWith('flow/'));
+    const pool = flow.length && chance(0.6) ? flow : from;
+    return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
   }
 
   /** Voice a scripted bark (the HUD already shows the text). */

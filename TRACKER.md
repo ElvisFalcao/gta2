@@ -70,6 +70,7 @@ Done means a stranger can open the link on their phone, play the whole story wit
 - After any change run `features` and `story` (`node tools/smoke.mjs <url> <dir> features|story`).
 
 ## Log
+- 2026-10-30 · Claude Code · Voices: Flow lines were only about 2% of what street people could say, so players rarely heard them. `pickLine` now picks a Flow line 60% of the time when one is available, and the service worker fetches the voice manifest network-first. Take the bias out once most lines have Flow clips.
 - 2026-10-30 · Claude Code · Voices: 15 more Google Flow lines from five new clips (`sisi`, two `thug` accents, two `cop` accents), so 24 Flow lines in all. Fast-forwarded the published branch `claude/eager-curie-n6dyhq` to include the voice work, so it is live.
 - 2026-10-30 · Claude Code · Voices: made the three Google Flow test clips (Nano Banana 2.1 portraits animated with Omni 1.1 Flash) and cut them into 9 lines in `assets/voice/flow/`; the manifest now uses them. Cuts not yet heard in game or checked with speech recognition.
 - 2026-10-30 · Claude Code · Voices: Kokoro AI clips for the other 260 street lines, so all 563 have a clip. Set up a Google Flow voice test: prompts for 3 characters (`docs/voice-flow-test.md`) and `tools/voice-flow.mjs`, which cuts a Flow video into game clips (Flow beats Kokoro, real recordings beat both).
